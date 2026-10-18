@@ -31,13 +31,13 @@ final class ImagesRemoveListener
     public function __construct(
         private ImageUploaderInterface $imageUploader,
         private CacheManager $cacheManager,
-        private FilterManager $filterManager
+        private FilterManager $filterManager,
     ) {
     }
 
     public function onFlush(OnFlushEventArgs $event): void
     {
-        foreach ($event->getEntityManager()->getUnitOfWork()->getScheduledEntityDeletions() as $entityDeletion) {
+        foreach ($event->getObjectManager()->getUnitOfWork()->getScheduledEntityDeletions() as $entityDeletion) {
             if (!$entityDeletion instanceof ImageInterface) {
                 continue;
             }

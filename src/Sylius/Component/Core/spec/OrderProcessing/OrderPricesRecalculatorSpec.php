@@ -44,9 +44,9 @@ final class OrderPricesRecalculatorSpec extends ObjectBehavior
         OrderInterface $order,
         OrderItemInterface $item,
         ProductVariantInterface $variant,
-        ProductVariantPricesCalculatorInterface $productVariantPriceCalculator
+        ProductVariantPricesCalculatorInterface $productVariantPriceCalculator,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
 
         $order->getCustomer()->willReturn($customer);
         $order->getChannel()->willReturn(null);
@@ -83,9 +83,9 @@ final class OrderPricesRecalculatorSpec extends ObjectBehavior
         ;
     }
 
-    function it_does_nothing_if_the_order_is_in_a_state_different_than_cart(OrderInterface $order): void
+    function it_does_nothing_if_the_order_cannot_be_processed(OrderInterface $order): void
     {
-        $order->getState()->willReturn(OrderInterface::STATE_NEW);
+        $order->canBeProcessed()->willReturn(false);
 
         $order->getChannel()->shouldNotBeCalled();
         $order->getItems()->shouldNotBeCalled();

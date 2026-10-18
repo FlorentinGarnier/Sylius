@@ -14,28 +14,21 @@ declare(strict_types=1);
 namespace Sylius\Bundle\ShopBundle\EventListener;
 
 use Sylius\Component\Channel\Context\ChannelContextInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Storage\CartStorageInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Security\Http\HttpUtils;
-use Symfony\Component\Security\Http\Logout\DefaultLogoutSuccessHandler;
 
-final class ShopUserLogoutHandler extends DefaultLogoutSuccessHandler
+final class ShopUserLogoutHandler
 {
     public function __construct(
-        HttpUtils $httpUtils,
-        string $targetUrl,
         private ChannelContextInterface $channelContext,
-        private CartStorageInterface $cartStorage
+        private CartStorageInterface $cartStorage,
     ) {
-        parent::__construct($httpUtils, $targetUrl);
     }
 
-    public function onLogoutSuccess(Request $request): Response
+    public function onLogout(): void
     {
+        /** @var ChannelInterface $channel */
         $channel = $this->channelContext->getChannel();
         $this->cartStorage->removeForChannel($channel);
-
-        return parent::onLogoutSuccess($request);
     }
 }

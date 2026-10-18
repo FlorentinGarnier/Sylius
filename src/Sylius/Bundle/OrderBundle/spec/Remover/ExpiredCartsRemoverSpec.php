@@ -39,25 +39,58 @@ final class ExpiredCartsRemoverSpec extends ObjectBehavior
         ObjectManager $orderManager,
         EventDispatcher $eventDispatcher,
         OrderInterface $firstCart,
-        OrderInterface $secondCart
+        OrderInterface $secondCart,
     ): void {
-        $orderRepository->findCartsNotModifiedSince(Argument::type('\DateTimeInterface'))->willReturn([
-            $firstCart,
-            $secondCart,
-        ]);
+        $orderRepository->findCartsNotModifiedSince(Argument::type('\DateTimeInterface'), 100)->willReturn(
+            [$firstCart, $secondCart],
+            [],
+        );
 
         $eventDispatcher
             ->dispatch(Argument::any(), SyliusExpiredCartsEvents::PRE_REMOVE)
             ->shouldBeCalled()
         ;
 
-        $orderManager->remove($firstCart);
-        $orderManager->remove($secondCart);
-        $orderManager->flush();
+        $orderManager->remove($firstCart)->shouldBeCalledOnce();
+        $orderManager->remove($secondCart)->shouldBeCalledOnce();
+        $orderManager->flush()->shouldBeCalledOnce();
+        $orderManager->clear()->shouldBeCalledOnce();
 
         $eventDispatcher
             ->dispatch(Argument::any(), SyliusExpiredCartsEvents::POST_REMOVE)
             ->shouldBeCalled()
+        ;
+
+        $this->remove();
+    }
+
+    function it_removes_carts_in_batches(
+        OrderRepositoryInterface $orderRepository,
+        ObjectManager $orderManager,
+        EventDispatcher $eventDispatcher,
+        OrderInterface $cart,
+    ): void {
+        $orderRepository
+            ->findCartsNotModifiedSince(Argument::type('\DateTimeInterface'), 100)
+            ->willReturn(
+                array_fill(0, 100, $cart),
+                array_fill(0, 100, $cart),
+                [],
+            )
+        ;
+
+        $eventDispatcher
+            ->dispatch(Argument::any(), SyliusExpiredCartsEvents::PRE_REMOVE)
+            ->shouldBeCalledTimes(2)
+        ;
+
+        $orderManager->remove(Argument::type(OrderInterface::class))->shouldBeCalledTimes(200);
+        $orderManager->flush()->shouldBeCalledTimes(2);
+        $orderManager->clear()->shouldBeCalledTimes(2);
+
+        $eventDispatcher
+            ->dispatch(Argument::any(), SyliusExpiredCartsEvents::POST_REMOVE)
+            ->shouldBeCalledTimes(2)
         ;
 
         $this->remove();

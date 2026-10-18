@@ -82,6 +82,16 @@ final class CatalogPromotionFixtureTest extends TestCase
     public function catalog_promotion_channels_can_be_set(): void
     {
         $this->assertConfigurationIsValid([['custom' => [['channels' => ['first_channel', 'second_channel']]]]], 'custom.*.channels');
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => []]]]],
+            ['custom' => [['channels' => []]]],
+            'custom.*.channels',
+        );
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => null]]]],
+            ['custom' => [[]]],
+            'custom.*.channels',
+        );
     }
 
     /** @test */
@@ -100,7 +110,7 @@ final class CatalogPromotionFixtureTest extends TestCase
     {
         return new CatalogPromotionFixture(
             $this->getMockBuilder(ObjectManager::class)->getMock(),
-            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock()
+            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock(),
         );
     }
 }

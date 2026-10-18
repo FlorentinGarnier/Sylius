@@ -19,14 +19,10 @@ use Webmozart\Assert\Assert;
 
 final class ProductContext implements Context
 {
-    private ProductRepositoryInterface $productRepository;
-
-    private string $locale;
-
-    public function __construct(ProductRepositoryInterface $productRepository, string $locale = 'en_US')
-    {
-        $this->productRepository = $productRepository;
-        $this->locale = $locale;
+    public function __construct(
+        private ProductRepositoryInterface $productRepository,
+        private string $locale = 'en_US',
+    ) {
     }
 
     /**
@@ -42,7 +38,7 @@ final class ProductContext implements Context
         Assert::eq(
             count($products),
             1,
-            sprintf('%d products has been found with name "%s".', count($products), $productName)
+            sprintf('%d products has been found with name "%s".', count($products), $productName),
         );
 
         return $products[0];
@@ -54,8 +50,6 @@ final class ProductContext implements Context
      */
     public function getProductsByNames(...$productsNames)
     {
-        return array_map(function ($productName) {
-            return $this->getProductByName($productName);
-        }, $productsNames);
+        return array_map(fn ($productName) => $this->getProductByName($productName), $productsNames);
     }
 }

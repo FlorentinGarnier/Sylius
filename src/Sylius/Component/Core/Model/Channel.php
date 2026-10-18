@@ -20,27 +20,20 @@ use Sylius\Component\Addressing\Model\ZoneInterface;
 use Sylius\Component\Channel\Model\Channel as BaseChannel;
 use Sylius\Component\Currency\Model\CurrencyInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
+use Sylius\Component\Taxonomy\Model\TaxonInterface;
 
 class Channel extends BaseChannel implements ChannelInterface
 {
-    /**
-     * @var CurrencyInterface|null
-     */
+    /** @var CurrencyInterface|null */
     protected $baseCurrency;
 
-    /**
-     * @var LocaleInterface|null
-     */
+    /** @var LocaleInterface|null */
     protected $defaultLocale;
 
-    /**
-     * @var ZoneInterface|null
-     */
+    /** @var ZoneInterface|null */
     protected $defaultTaxZone;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $taxCalculationStrategy;
 
     /**
@@ -64,45 +57,33 @@ class Channel extends BaseChannel implements ChannelInterface
      */
     protected $countries;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $themeName;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $contactEmail;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $contactPhoneNumber;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $skippingShippingStepAllowed = false;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $skippingPaymentStepAllowed = false;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $accountVerificationRequired = true;
 
-    /**
-     * @var ShopBillingDataInterface|null
-     */
+    protected bool $shippingAddressInCheckoutRequired = false;
+
+    /** @var ShopBillingDataInterface|null */
     protected $shopBillingData;
 
-    /**
-     * @var TaxonInterface|null
-     */
+    /** @var TaxonInterface|null */
     protected $menuTaxon;
+
+    protected ?ChannelPriceHistoryConfigInterface $channelPriceHistoryConfig = null;
 
     public function __construct()
     {
@@ -288,6 +269,16 @@ class Channel extends BaseChannel implements ChannelInterface
         $this->accountVerificationRequired = $accountVerificationRequired;
     }
 
+    public function isShippingAddressInCheckoutRequired(): bool
+    {
+        return $this->shippingAddressInCheckoutRequired;
+    }
+
+    public function setShippingAddressInCheckoutRequired(bool $shippingAddressInCheckoutRequired): void
+    {
+        $this->shippingAddressInCheckoutRequired = $shippingAddressInCheckoutRequired;
+    }
+
     public function getShopBillingData(): ?ShopBillingDataInterface
     {
         return $this->shopBillingData;
@@ -306,5 +297,15 @@ class Channel extends BaseChannel implements ChannelInterface
     public function setMenuTaxon(?TaxonInterface $menuTaxon): void
     {
         $this->menuTaxon = $menuTaxon;
+    }
+
+    public function getChannelPriceHistoryConfig(): ?ChannelPriceHistoryConfigInterface
+    {
+        return $this->channelPriceHistoryConfig;
+    }
+
+    public function setChannelPriceHistoryConfig(ChannelPriceHistoryConfigInterface $channelPriceHistoryConfig): void
+    {
+        $this->channelPriceHistoryConfig = $channelPriceHistoryConfig;
     }
 }

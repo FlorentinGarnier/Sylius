@@ -15,25 +15,30 @@ namespace spec\Sylius\Bundle\ApiBundle\CommandHandler\Checkout;
 
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
-use Sylius\Bundle\ApiBundle\Assigner\OrderPromoCodeAssignerInterface;
+use Sylius\Bundle\ApiBundle\Assigner\OrderPromotionCodeAssignerInterface;
 use Sylius\Bundle\ApiBundle\Command\Checkout\UpdateCart;
 use Sylius\Bundle\ApiBundle\Modifier\OrderAddressModifierInterface;
-use Sylius\Bundle\ApiBundle\Provider\CustomerProviderInterface;
+use Sylius\Bundle\CoreBundle\Resolver\CustomerResolverInterface;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
-class UpdateCartHandlerSpec extends ObjectBehavior
+final class UpdateCartHandlerSpec extends ObjectBehavior
 {
     function let(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
-        CustomerProviderInterface $customerProvider
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
+        CustomerResolverInterface $customerResolver,
     ) {
-        $this->beConstructedWith($orderRepository, $orderAddressModifier, $orderPromoCodeAssigner, $customerProvider);
+        $this->beConstructedWith(
+            $orderRepository,
+            $orderAddressModifier,
+            $orderPromotionCodeAssigner,
+            $customerResolver,
+        );
     }
 
     function it_is_a_message_handler(): void
@@ -44,10 +49,10 @@ class UpdateCartHandlerSpec extends ObjectBehavior
     function it_throws_exception_if_cart_is_not_found(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
         OrderInterface $order,
         AddressInterface $shippingAddress,
-        AddressInterface $billingAddress
+        AddressInterface $billingAddress,
     ): void {
         $orderRepository->findOneBy(['tokenValue' => 'cart'])->willReturn(null);
 
@@ -55,21 +60,22 @@ class UpdateCartHandlerSpec extends ObjectBehavior
 
         $orderAddressModifier->modify($order, $billingAddress, $shippingAddress, 'john.doe@email.com')->shouldNotBeCalled();
 
-        $orderPromoCodeAssigner->assign($order, 'coupon')->shouldNotBeCalled();
+        $orderPromotionCodeAssigner->assign($order, 'coupon')->shouldNotBeCalled();
 
         $updateCart = new UpdateCart('john.doe@email.com', $billingAddress->getWrappedObject(), $shippingAddress->getWrappedObject(), 'coupon');
         $updateCart->setOrderTokenValue('cart');
 
         $this->shouldThrow(\InvalidArgumentException::class)
-            ->during('__invoke', [$updateCart]);
+            ->during('__invoke', [$updateCart])
+        ;
     }
 
     function it_modifies_billing_address(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
         OrderInterface $order,
-        AddressInterface $billingAddress
+        AddressInterface $billingAddress,
     ): void {
         $updateCart = new UpdateCart(null, $billingAddress->getWrappedObject());
         $updateCart->setOrderTokenValue('cart');
@@ -80,12 +86,14 @@ class UpdateCartHandlerSpec extends ObjectBehavior
 
         $orderAddressModifier->modify($order, $billingAddress->getWrappedObject(), null)
             ->shouldBeCalled()
-            ->willReturn($order);
+            ->willReturn($order)
+        ;
 
-        $orderPromoCodeAssigner
+        $orderPromotionCodeAssigner
             ->assign($order->getWrappedObject(), null)
             ->shouldBeCalled()
-            ->willReturn($order->getWrappedObject());
+            ->willReturn($order->getWrappedObject())
+        ;
 
         $this($updateCart)->shouldReturn($order);
     }
@@ -93,17 +101,11 @@ class UpdateCartHandlerSpec extends ObjectBehavior
     function it_modifies_shipping_address(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
         OrderInterface $order,
-        AddressInterface $billingAddress,
-        AddressInterface $shippingAddress
+        AddressInterface $shippingAddress,
     ): void {
-        $updateCart = new UpdateCart(
-            null,
-            $billingAddress->getWrappedObject(),
-            $shippingAddress->getWrappedObject(),
-            null
-        );
+        $updateCart = new UpdateCart(null, null, $shippingAddress->getWrappedObject(), null);
 
         $updateCart->setOrderTokenValue('cart');
 
@@ -113,16 +115,18 @@ class UpdateCartHandlerSpec extends ObjectBehavior
 
         $orderAddressModifier->modify(
             $order->getWrappedObject(),
-            $billingAddress->getWrappedObject(),
-            $shippingAddress->getWrappedObject()
+            null,
+            $shippingAddress->getWrappedObject(),
         )
             ->shouldBeCalled()
-            ->willReturn($order);
+            ->willReturn($order)
+        ;
 
-        $orderPromoCodeAssigner
+        $orderPromotionCodeAssigner
             ->assign($order, null)
             ->shouldBeCalled()
-            ->willReturn($order);
+            ->willReturn($order)
+        ;
 
         $this($updateCart)->shouldReturn($order);
     }
@@ -130,8 +134,8 @@ class UpdateCartHandlerSpec extends ObjectBehavior
     function it_applies_coupon(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
-        OrderInterface $order
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
+        OrderInterface $order,
     ): void {
         $updateCart = new UpdateCart(null, null, null, 'couponCode');
         $updateCart->setOrderTokenValue('cart');
@@ -142,10 +146,11 @@ class UpdateCartHandlerSpec extends ObjectBehavior
 
         $orderAddressModifier->modify($order->getWrappedObject(), Argument::any())->shouldNotBeCalled();
 
-        $orderPromoCodeAssigner
+        $orderPromotionCodeAssigner
             ->assign($order->getWrappedObject(), 'couponCode')
             ->shouldBeCalled()
-            ->willReturn($order->getWrappedObject());
+            ->willReturn($order->getWrappedObject())
+        ;
 
         $this($updateCart)->shouldReturn($order);
     }
@@ -153,39 +158,41 @@ class UpdateCartHandlerSpec extends ObjectBehavior
     function it_modifies_address_and_email_and_applies_coupon(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
         OrderInterface $order,
         AddressInterface $billingAddress,
         AddressInterface $shippingAddress,
         CustomerInterface $customer,
-        CustomerProviderInterface $customerProvider
+        CustomerResolverInterface $customerResolver,
     ): void {
         $updateCart = new UpdateCart(
             'john.doe@email.com',
             $billingAddress->getWrappedObject(),
             $shippingAddress->getWrappedObject(),
-            'couponCode'
+            'couponCode',
         );
 
         $updateCart->setOrderTokenValue('cart');
 
         $orderRepository->findOneBy(['tokenValue' => 'cart'])->willReturn($order->getWrappedObject());
 
-        $customerProvider->provide('john.doe@email.com')->shouldBeCalled()->willReturn($customer);
+        $customerResolver->resolve('john.doe@email.com')->shouldBeCalled()->willReturn($customer);
         $order->setCustomer($customer)->shouldBeCalled();
 
         $orderAddressModifier->modify(
             $order->getWrappedObject(),
             $billingAddress->getWrappedObject(),
-            $shippingAddress->getWrappedObject()
+            $shippingAddress->getWrappedObject(),
         )
             ->shouldBeCalled()
-            ->willReturn($order);
+            ->willReturn($order)
+        ;
 
-        $orderPromoCodeAssigner
+        $orderPromotionCodeAssigner
             ->assign($order->getWrappedObject(), 'couponCode')
             ->shouldBeCalled()
-            ->willReturn($order->getWrappedObject());
+            ->willReturn($order->getWrappedObject())
+        ;
 
         $this($updateCart)->shouldReturn($order);
     }
@@ -193,39 +200,41 @@ class UpdateCartHandlerSpec extends ObjectBehavior
     function it_sets_the_customer_by_email(
         OrderRepositoryInterface $orderRepository,
         OrderAddressModifierInterface $orderAddressModifier,
-        OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
+        OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
         OrderInterface $order,
         AddressInterface $billingAddress,
         AddressInterface $shippingAddress,
-        CustomerProviderInterface $customerProvider,
-        CustomerInterface $customer
+        CustomerResolverInterface $customerResolver,
+        CustomerInterface $customer,
     ): void {
         $updateCart = new UpdateCart(
             'john.doe@email.com',
             $billingAddress->getWrappedObject(),
             $shippingAddress->getWrappedObject(),
-            'couponCode'
+            'couponCode',
         );
 
         $updateCart->setOrderTokenValue('cart');
 
         $orderRepository->findOneBy(['tokenValue' => 'cart'])->willReturn($order->getWrappedObject());
 
-        $customerProvider->provide('john.doe@email.com')->shouldBeCalled()->willReturn($customer);
+        $customerResolver->resolve('john.doe@email.com')->shouldBeCalled()->willReturn($customer);
         $order->setCustomer($customer)->shouldBeCalled();
 
         $orderAddressModifier->modify(
             $order->getWrappedObject(),
             $billingAddress->getWrappedObject(),
-            $shippingAddress->getWrappedObject()
+            $shippingAddress->getWrappedObject(),
         )
             ->shouldBeCalled()
-            ->willReturn($order->getWrappedObject());
+            ->willReturn($order->getWrappedObject())
+        ;
 
-        $orderPromoCodeAssigner
+        $orderPromotionCodeAssigner
             ->assign($order->getWrappedObject(), 'couponCode')
             ->shouldBeCalled()
-            ->willReturn($order->getWrappedObject());
+            ->willReturn($order->getWrappedObject())
+        ;
 
         $this($updateCart)->shouldReturn($order);
     }

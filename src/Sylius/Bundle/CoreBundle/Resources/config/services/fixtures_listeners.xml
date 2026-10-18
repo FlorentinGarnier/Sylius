@@ -17,9 +17,15 @@
 
         <service id="sylius_fixtures.listener.catalog_promotion_executor" class="Sylius\Bundle\CoreBundle\Fixture\Listener\CatalogPromotionExecutorListener" public="false">
             <argument type="service" id="Sylius\Bundle\CoreBundle\CatalogPromotion\Processor\AllProductVariantsCatalogPromotionsProcessorInterface" />
-            <argument type="service" id="Sylius\Bundle\PromotionBundle\Doctrine\ORM\CatalogPromotionRepository" />
+            <argument type="service" id="sylius.repository.catalog_promotion" />
             <argument type="service" id="sylius.command_bus" />
             <argument type="tagged_iterator" tag="sylius.catalog_promotion.criteria" />
+            <tag name="sylius_fixtures.listener" />
+        </service>
+
+        <service id="Sylius\Bundle\CoreBundle\Fixture\Listener\ImagesPurgerListener" public="false">
+            <argument type="service" id="filesystem" />
+            <argument>%sylius_core.images_dir%</argument>
             <tag name="sylius_fixtures.listener" />
         </service>
     </services>

@@ -24,28 +24,13 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 
 final class ProductOptionContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private ProductOptionRepositoryInterface $productOptionRepository;
-
-    private FactoryInterface $productOptionFactory;
-
-    private FactoryInterface $productOptionValueFactory;
-
-    private ObjectManager $objectManager;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        ProductOptionRepositoryInterface $productOptionRepository,
-        FactoryInterface $productOptionFactory,
-        FactoryInterface $productOptionValueFactory,
-        ObjectManager $objectManager
+        private SharedStorageInterface $sharedStorage,
+        private ProductOptionRepositoryInterface $productOptionRepository,
+        private FactoryInterface $productOptionFactory,
+        private FactoryInterface $productOptionValueFactory,
+        private ObjectManager $objectManager,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->productOptionRepository = $productOptionRepository;
-        $this->productOptionFactory = $productOptionFactory;
-        $this->productOptionValueFactory = $productOptionValueFactory;
-        $this->objectManager = $objectManager;
     }
 
     /**
@@ -73,7 +58,7 @@ final class ProductOptionContext implements Context
     public function thisProductOptionHasTheOptionValueWithCode(
         ProductOptionInterface $productOption,
         $productOptionValueName,
-        $productOptionValueCode
+        $productOptionValueCode,
     ) {
         $productOptionValue = $this->createProductOptionValue($productOptionValueName, $productOptionValueCode);
         $productOption->addValue($productOptionValue);

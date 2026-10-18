@@ -16,26 +16,18 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Product\Model\ProductAssociationTypeInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingProductAssociationTypesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker,
-        SharedStorageInterface $sharedStorage
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private SharedStorageInterface $sharedStorage,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
-        $this->sharedStorage = $sharedStorage;
     }
 
     /**
@@ -43,7 +35,7 @@ final class ManagingProductAssociationTypesContext implements Context
      */
     public function iWantToCreateANewProductAssociationType(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::PRODUCT_ASSOCIATION_TYPES);
     }
 
     /**
@@ -85,7 +77,7 @@ final class ManagingProductAssociationTypesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Product association type could not be created'
+            'Product association type could not be created',
         );
     }
 
@@ -95,8 +87,8 @@ final class ManagingProductAssociationTypesContext implements Context
     public function theProductAssociationTypeShouldAppearInTheStore(string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('There is no product association type with name "%s"', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES), 'name', $name),
+            sprintf('There is no product association type with name "%s"', $name),
         );
     }
 
@@ -106,7 +98,7 @@ final class ManagingProductAssociationTypesContext implements Context
      */
     public function iBrowseProductAssociationTypes(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES);
     }
 
     /**
@@ -115,7 +107,7 @@ final class ManagingProductAssociationTypesContext implements Context
      */
     public function iShouldSeeProductAssociationTypesInTheList(int $count = 1): void
     {
-        Assert::same($this->responseChecker->countCollectionItems($this->client->index()), $count);
+        Assert::same($this->responseChecker->countCollectionItems($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES)), $count);
     }
 
     /**
@@ -125,8 +117,8 @@ final class ManagingProductAssociationTypesContext implements Context
     public function iShouldSeeTheProductAssociationTypeInTheList(string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('There is no product association type with name "%s"', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES), 'name', $name),
+            sprintf('There is no product association type with name "%s"', $name),
         );
     }
 
@@ -135,7 +127,7 @@ final class ManagingProductAssociationTypesContext implements Context
      */
     public function iDeleteTheProductAssociationType(ProductAssociationTypeInterface $productAssociationType): void
     {
-        $this->client->delete($productAssociationType->getCode());
+        $this->client->delete(Resources::PRODUCT_ASSOCIATION_TYPES, $productAssociationType->getCode());
     }
 
     /**
@@ -145,9 +137,9 @@ final class ManagingProductAssociationTypesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful(
-            $this->client->getLastResponse()
-        ),
-            'Product association type could not be deleted'
+                $this->client->getLastResponse(),
+            ),
+            'Product association type could not be deleted',
         );
     }
 
@@ -157,8 +149,8 @@ final class ManagingProductAssociationTypesContext implements Context
     public function thisProductAssociationTypeShouldNoLongerExistInTheRegistry(ProductAssociationTypeInterface $productAssociationType): void
     {
         Assert::false(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'code', $productAssociationType->getCode()),
-            sprintf('Product association type with code %s exist', $productAssociationType->getCode())
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES), 'code', $productAssociationType->getCode()),
+            sprintf('Product association type with code %s exist', $productAssociationType->getCode()),
         );
     }
 
@@ -167,7 +159,7 @@ final class ManagingProductAssociationTypesContext implements Context
      */
     public function iWantToModifyTheProductAssociationType(ProductAssociationTypeInterface $productAssociationType): void
     {
-        $this->client->buildUpdateRequest($productAssociationType->getCode());
+        $this->client->buildUpdateRequest(Resources::PRODUCT_ASSOCIATION_TYPES, $productAssociationType->getCode());
     }
 
     /**
@@ -179,32 +171,13 @@ final class ManagingProductAssociationTypesContext implements Context
     }
 
     /**
-     * @When I (try to) save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
-    }
-
-    /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Product association type could not be edited'
-        );
-    }
-
-    /**
      * @Then /^(this product association type) name should be "([^"]+)"$/
      */
     public function thisProductAssociationTypeNameShouldBe(ProductAssociationTypeInterface $productAssociationType, string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show($productAssociationType->getCode()), 'name', $name),
-            sprintf('Product association type name is not %s', $name)
+            $this->responseChecker->hasValue($this->client->show(Resources::PRODUCT_ASSOCIATION_TYPES, $productAssociationType->getCode()), 'name', $name),
+            sprintf('Product association type name is not %s', $name),
         );
     }
 
@@ -217,7 +190,7 @@ final class ManagingProductAssociationTypesContext implements Context
 
         Assert::false(
             $this->responseChecker->hasValue($this->client->update(), 'code', 'NEW_CODE'),
-            'The shipping category code should not be changed to "NEW_CODE", but it is'
+            'The shipping category code should not be changed to "NEW_CODE", but it is',
         );
     }
 
@@ -240,7 +213,7 @@ final class ManagingProductAssociationTypesContext implements Context
     public function iDeleteThem(): void
     {
         foreach ($this->sharedStorage->get('product_association_type_to_delete') as $code) {
-            $this->client->delete($code);
+            $this->client->delete(Resources::PRODUCT_ASSOCIATION_TYPES, $code);
         }
     }
 
@@ -277,7 +250,7 @@ final class ManagingProductAssociationTypesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'The association type with given code already exists.'
+            'The association type with given code already exists.',
         );
     }
 
@@ -287,9 +260,9 @@ final class ManagingProductAssociationTypesContext implements Context
     public function thereShouldStillBeOnlyOneProductAssociationTypeWithACode(string $code): void
     {
         Assert::count(
-            $this->responseChecker->getCollectionItemsWithValue($this->client->index(), 'code', $code),
+            $this->responseChecker->getCollectionItemsWithValue($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES), 'code', $code),
             1,
-            sprintf('More then one Product association type have code %s.', $code)
+            sprintf('More then one Product association type have code %s.', $code),
         );
     }
 
@@ -308,7 +281,7 @@ final class ManagingProductAssociationTypesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            sprintf('Please enter association type %s.', $type)
+            sprintf('Please enter association type %s.', $type),
         );
     }
 
@@ -318,8 +291,8 @@ final class ManagingProductAssociationTypesContext implements Context
     public function theProductAssociationTypeWithNameShouldNotBeAdded(string $type, string $value): void
     {
         Assert::false(
-            $this->responseChecker->hasItemWithValue($this->client->index(), $type, $value),
-            sprintf('Product association type with %s %s exist', $type, $value)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::PRODUCT_ASSOCIATION_TYPES), $type, $value),
+            sprintf('Product association type with %s %s exist', $type, $value),
         );
     }
 

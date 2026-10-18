@@ -48,7 +48,6 @@ $layout-sidebar-width: 260px;
         left: 0;
         z-index: 998;
         width: 100%;
-        height: $layout-topbar-height;
     }
 
     .admin-layout__content {
@@ -89,7 +88,7 @@ $layout-sidebar-width: 260px;
 
         .admin-layout__topbar {
             left: $layout-sidebar-width;
-            width: calc(100% - $layout-sidebar-width);
+            width: calc(100% - #{$layout-sidebar-width});
         }
     }
 }

@@ -24,21 +24,14 @@ use Symfony\Component\Routing\RouterInterface;
 
 class ShowPage extends SymfonyPage implements ShowPageInterface
 {
-    private TableAccessorInterface $tableAccessor;
-
-    private MoneyFormatterInterface $moneyFormatter;
-
     public function __construct(
         Session $session,
         $minkParameters,
         RouterInterface $router,
-        TableAccessorInterface $tableAccessor,
-        MoneyFormatterInterface $moneyFormatter
+        private TableAccessorInterface $tableAccessor,
+        private MoneyFormatterInterface $moneyFormatter,
     ) {
         parent::__construct($session, $minkParameters, $router);
-
-        $this->tableAccessor = $tableAccessor;
-        $this->moneyFormatter = $moneyFormatter;
     }
 
     public function hasCustomer(string $customerName): bool
@@ -59,7 +52,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
     {
         try {
             $this->getElement('shipping_address');
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return false;
         }
 
@@ -128,7 +121,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
             $table = $this->getElement('table');
             $rows = $this->tableAccessor->getRowsWithFields(
                 $table,
-                ['item' => $productName]
+                ['item' => $productName],
             );
 
             foreach ($rows as $row) {
@@ -140,7 +133,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
             }
 
             return false;
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }
@@ -285,7 +278,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
     {
         try {
             $payments = $this->getElement('payments')->findAll('css', '.item');
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return 0;
         }
 
@@ -296,7 +289,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
     {
         try {
             $shipments = $this->getElement('shipments')->findAll('css', '.item');
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return 0;
         }
 
@@ -450,7 +443,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
     {
         $rows = $this->tableAccessor->getRowsWithFields(
             $this->getElement('table'),
-            ['item' => $itemName]
+            ['item' => $itemName],
         );
 
         return $rows[0]->find('css', '.' . $property)->getText();

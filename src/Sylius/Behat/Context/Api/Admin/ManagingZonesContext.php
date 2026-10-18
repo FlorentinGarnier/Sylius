@@ -17,6 +17,7 @@ use ApiPlatform\Core\Api\IriConverterInterface;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Addressing\Model\CountryInterface;
 use Sylius\Component\Addressing\Model\ProvinceInterface;
@@ -26,28 +27,13 @@ use Webmozart\Assert\Assert;
 
 final class ManagingZonesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
-    private IriConverterInterface $iriConverter;
-
-    private string $zoneMemberClass;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker,
-        SharedStorageInterface $sharedStorage,
-        IriConverterInterface $iriConverter,
-        string $zoneMemberClass
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private SharedStorageInterface $sharedStorage,
+        private IriConverterInterface $iriConverter,
+        private string $zoneMemberClass,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
-        $this->sharedStorage = $sharedStorage;
-        $this->iriConverter = $iriConverter;
-        $this->zoneMemberClass = $zoneMemberClass;
     }
 
     /**
@@ -55,7 +41,7 @@ final class ManagingZonesContext implements Context
      */
     public function iWantToCreateANewZoneConsistingOfCountry(string $memberType): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::ZONES);
         $this->client->addRequestData('type', $memberType);
     }
 
@@ -137,15 +123,15 @@ final class ManagingZonesContext implements Context
      */
     public function iWantToSeeAllZonesInStore(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::ZONES);
     }
 
     /**
-     * @When I delete zone named :zone
+     * @When /^I(?:| try to) delete the (zone named "([^"]*)")$/
      */
     public function iDeleteZoneNamed(ZoneInterface $zone): void
     {
-        $this->client->delete($zone->getCode());
+        $this->client->delete(Resources::ZONES, $zone->getCode());
     }
 
     /**
@@ -167,7 +153,7 @@ final class ManagingZonesContext implements Context
     public function iDeleteThem(): void
     {
         foreach ($this->sharedStorage->get('zone_to_delete') as $code) {
-            $this->client->delete($code);
+            $this->client->delete(Resources::ZONES, $code);
         }
     }
 
@@ -176,15 +162,25 @@ final class ManagingZonesContext implements Context
      */
     public function iWantToModifyTheZoneNamed(ZoneInterface $zone): void
     {
-        $this->client->buildUpdateRequest($zone->getCode());
+        $this->client->buildUpdateRequest(Resources::ZONES, $zone->getCode());
     }
 
     /**
-     * @When I remove the :country country member
+     * @When /^I(?:| also) remove the ("([^"]+)" country) member$/
      */
     public function iRemoveTheCountryMember(CountryInterface $country): void
     {
         $this->removeZoneMember($country);
+    }
+
+    /**
+     * @When /^I(?:| also) remove the ("([^"]+)", "([^"]+)" and "([^"]+)" country) members$/
+     */
+    public function iRemoveCountryMembers(array $countries): void
+    {
+        foreach ($countries as $country) {
+            $this->removeZoneMember($country);
+        }
     }
 
     /**
@@ -204,24 +200,16 @@ final class ManagingZonesContext implements Context
     }
 
     /**
-     * @When I save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
-    }
-
-    /**
      * @Then the zone named :zone with the :country country member should appear in the registry
      */
     public function theZoneNamedWithTheCountryMemberShouldAppearInTheRegistry(
         ZoneInterface $zone,
-        CountryInterface $country
+        CountryInterface $country,
     ): void {
         Assert::true($this->responseChecker->hasItemWithValue(
-            $this->client->subResourceIndex('members', $zone->getCode()),
+            $this->client->subResourceIndex(Resources::ZONES, 'members', $zone->getCode()),
             'code',
-            $country->getCode()
+            $country->getCode(),
         ));
     }
 
@@ -234,7 +222,7 @@ final class ManagingZonesContext implements Context
 
         Assert::false(
             $this->responseChecker->hasValue($this->client->update(), 'code', 'NEW_CODE'),
-            'The code field with value NEW_CODE exists'
+            'The code field with value NEW_CODE exists',
         );
     }
 
@@ -249,7 +237,7 @@ final class ManagingZonesContext implements Context
 
         Assert::contains(
             $this->responseChecker->getError($this->client->update()),
-            'members: Zone member cannot be the same as a zone.'
+            'members: Zone member cannot be the same as a zone.',
         );
     }
 
@@ -258,12 +246,12 @@ final class ManagingZonesContext implements Context
      */
     public function theZoneNamedWithTheProvinceMemberShouldAppearInTheRegistry(
         ZoneInterface $zone,
-        ProvinceInterface $province
+        ProvinceInterface $province,
     ): void {
         Assert::true($this->responseChecker->hasItemWithValue(
-            $this->client->subResourceIndex('members', $zone->getCode()),
+            $this->client->subResourceIndex(Resources::ZONES, 'members', $zone->getCode()),
             'code',
-            $province->getCode()
+            $province->getCode(),
         ));
     }
 
@@ -272,12 +260,12 @@ final class ManagingZonesContext implements Context
      */
     public function theZoneNamedWithTheZoneMemberShouldAppearInTheRegistry(
         ZoneInterface $zone,
-        ZoneInterface $otherZone
+        ZoneInterface $otherZone,
     ): void {
         Assert::true($this->responseChecker->hasItemWithValue(
-            $this->client->subResourceIndex('members', $zone->getCode()),
+            $this->client->subResourceIndex(Resources::ZONES, 'members', $zone->getCode()),
             'code',
-            $otherZone->getCode()
+            $otherZone->getCode(),
         ));
     }
 
@@ -287,8 +275,8 @@ final class ManagingZonesContext implements Context
     public function itsScopeShouldBe(string $scope): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show('EU'), 'scope', $scope),
-            sprintf('Its Zone does not have %s scope', $scope)
+            $this->responseChecker->hasValue($this->client->show(Resources::ZONES, 'EU'), 'scope', $scope),
+            sprintf('Its Zone does not have %s scope', $scope),
         );
     }
 
@@ -298,7 +286,7 @@ final class ManagingZonesContext implements Context
      */
     public function iShouldSeeZonesInTheList(int $count = 1): void
     {
-        Assert::same($this->responseChecker->countCollectionItems($this->client->index()), $count);
+        Assert::same($this->responseChecker->countCollectionItems($this->client->index(Resources::ZONES)), $count);
     }
 
     /**
@@ -308,8 +296,8 @@ final class ManagingZonesContext implements Context
     public function iShouldSeeTheZoneNamedInTheList(string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('There is no zone with name "%s"', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::ZONES), 'name', $name),
+            sprintf('There is no zone with name "%s"', $name),
         );
     }
 
@@ -319,9 +307,9 @@ final class ManagingZonesContext implements Context
     public function thereShouldStillBeOnlyOneZoneWithCode(string $code): void
     {
         Assert::count(
-            $this->responseChecker->getCollectionItemsWithValue($this->client->index(), 'code', $code),
+            $this->responseChecker->getCollectionItemsWithValue($this->client->index(Resources::ZONES), 'code', $code),
             1,
-            sprintf('There should be only one zone with code "%s"', $code)
+            sprintf('There should be only one zone with code "%s"', $code),
         );
     }
 
@@ -331,8 +319,8 @@ final class ManagingZonesContext implements Context
     public function theZoneNamedShouldNoLongerExistInTheRegistry(string $name): void
     {
         Assert::false(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('Zone with name %s exists', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::ZONES), 'name', $name),
+            sprintf('Zone with name %s exists', $name),
         );
     }
 
@@ -342,8 +330,8 @@ final class ManagingZonesContext implements Context
     public function zoneShouldNotBeAdded(string $field, string $value): void
     {
         Assert::false(
-            $this->responseChecker->hasItemWithValue($this->client->index(), $field, $value),
-            sprintf('Zone with %s %s exists', $field, $value)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::ZONES), $field, $value),
+            sprintf('Zone with %s %s exists', $field, $value),
         );
     }
 
@@ -353,14 +341,14 @@ final class ManagingZonesContext implements Context
     public function thisZoneShouldHaveOnlyTheProvinceMember(ZoneInterface $zone, ZoneMemberInterface $zoneMember): void
     {
         Assert::true($this->responseChecker->hasItemWithValue(
-            $this->client->subResourceIndex('members', $zone->getCode()),
+            $this->client->subResourceIndex(Resources::ZONES, 'members', $zone->getCode()),
             'code',
-            $zoneMember->getCode()
+            $zoneMember->getCode(),
         ));
 
         Assert::same(
-            $this->responseChecker->countCollectionItems($this->client->subResourceIndex('members', $zone->getCode())),
-            1
+            $this->responseChecker->countCollectionItems($this->client->subResourceIndex(Resources::ZONES, 'members', $zone->getCode())),
+            1,
         );
     }
 
@@ -370,8 +358,8 @@ final class ManagingZonesContext implements Context
     public function thisZoneNameShouldBe(ZoneInterface $zone, string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show($zone->getCode()), 'name', $name),
-            sprintf('Its Zone does not have name %s.', $name)
+            $this->responseChecker->hasValue($this->client->show(Resources::ZONES, $zone->getCode()), 'name', $name),
+            sprintf('Its Zone does not have name %s.', $name),
         );
     }
 
@@ -382,18 +370,7 @@ final class ManagingZonesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Zone could not be created'
-        );
-    }
-
-    /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Zone could not be edited'
+            'Zone could not be created',
         );
     }
 
@@ -405,20 +382,21 @@ final class ManagingZonesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful(
-            $this->client->getLastResponse()
-        ),
-            'Zone could not be deleted'
+                $this->client->getLastResponse(),
+            ),
+            'Zone could not be deleted',
         );
     }
 
     /**
      * @Then I should be notified that this zone cannot be deleted
+     * @Then I should be notified that the zone is in use and cannot be deleted
      */
     public function iShouldBeNotifiedThatThisZoneCannotBeDeleted(): void
     {
         Assert::false(
             $this->responseChecker->isDeletionSuccessful($this->client->getLastResponse()),
-            'Zone can be deleted, but it should not'
+            'Zone can be deleted, but it should not',
         );
     }
 
@@ -429,7 +407,7 @@ final class ManagingZonesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'code: Zone code must be unique.'
+            'code: Zone code must be unique.',
         );
     }
 
@@ -440,7 +418,7 @@ final class ManagingZonesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            sprintf('Please enter zone %s.', $element)
+            sprintf('Please enter zone %s.', $element),
         );
     }
 
@@ -451,14 +429,11 @@ final class ManagingZonesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'members: Please add at least 1 zone member.'
+            'members: Please add at least 1 zone member.',
         );
     }
 
-    /**
-     * @param CountryInterface|ZoneInterface|ProvinceInterface $objectToRemove
-     */
-    private function removeZoneMember($objectToRemove): void
+    private function removeZoneMember(CountryInterface|ProvinceInterface|ZoneInterface $objectToRemove): void
     {
         $iri = $this->iriConverter->getItemIriFromResourceClass($this->zoneMemberClass, ['code' => $objectToRemove->getCode()]);
 

@@ -26,22 +26,34 @@ final class ExpiredCartsRemover implements ExpiredCartsRemoverInterface
         private OrderRepositoryInterface $orderRepository,
         private ObjectManager $orderManager,
         private EventDispatcherInterface $eventDispatcher,
-        private string $expirationPeriod
+        private string $expirationPeriod,
+        private int $batchSize = 100,
     ) {
     }
 
     public function remove(): void
     {
-        $expiredCarts = $this->orderRepository->findCartsNotModifiedSince(new \DateTime('-' . $this->expirationPeriod));
+        while ([] !== $expiredCarts = $this->getBatch()) {
+            foreach ($expiredCarts as $expiredCart) {
+                $this->orderManager->remove($expiredCart);
+            }
 
-        $this->eventDispatcher->dispatch(new GenericEvent($expiredCarts), SyliusExpiredCartsEvents::PRE_REMOVE);
-
-        foreach ($expiredCarts as $expiredCart) {
-            $this->orderManager->remove($expiredCart);
+            $this->processDeletion($expiredCarts);
         }
+    }
 
+    private function getBatch(): array
+    {
+        $terminalDate = new \DateTime(sprintf('-%s', $this->expirationPeriod));
+
+        return $this->orderRepository->findCartsNotModifiedSince($terminalDate, $this->batchSize);
+    }
+
+    private function processDeletion(array $deletedCarts): void
+    {
+        $this->eventDispatcher->dispatch(new GenericEvent($deletedCarts), SyliusExpiredCartsEvents::PRE_REMOVE);
         $this->orderManager->flush();
-
-        $this->eventDispatcher->dispatch(new GenericEvent($expiredCarts), SyliusExpiredCartsEvents::POST_REMOVE);
+        $this->eventDispatcher->dispatch(new GenericEvent($deletedCarts), SyliusExpiredCartsEvents::POST_REMOVE);
+        $this->orderManager->clear();
     }
 }

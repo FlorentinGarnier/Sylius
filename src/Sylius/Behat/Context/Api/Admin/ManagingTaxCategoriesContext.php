@@ -16,19 +16,16 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Component\Taxation\Model\TaxCategoryInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingTaxCategoriesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    public function __construct(ApiClientInterface $client, ResponseCheckerInterface $responseChecker)
-    {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
+    public function __construct(
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+    ) {
     }
 
     /**
@@ -36,7 +33,7 @@ final class ManagingTaxCategoriesContext implements Context
      */
     public function iWantToCreateNewTaxCategory(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::TAX_CATEGORIES);
     }
 
     /**
@@ -45,7 +42,7 @@ final class ManagingTaxCategoriesContext implements Context
      */
     public function iWantToModifyTaxCategory(TaxCategoryInterface $taxCategory): void
     {
-        $this->client->buildUpdateRequest($taxCategory->getCode());
+        $this->client->buildUpdateRequest(Resources::TAX_CATEGORIES, $taxCategory->getCode());
     }
 
     /**
@@ -53,7 +50,7 @@ final class ManagingTaxCategoriesContext implements Context
      */
     public function iDeleteTaxCategory(TaxCategoryInterface $taxCategory): void
     {
-        $this->client->delete($taxCategory->getCode());
+        $this->client->delete(Resources::TAX_CATEGORIES, $taxCategory->getCode());
     }
 
     /**
@@ -104,19 +101,11 @@ final class ManagingTaxCategoriesContext implements Context
     }
 
     /**
-     * @When I (try to) save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
-    }
-
-    /**
      * @When I browse tax categories
      */
     public function iWantToBrowseTaxCategories(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::TAX_CATEGORIES);
     }
 
     /**
@@ -127,7 +116,7 @@ final class ManagingTaxCategoriesContext implements Context
         $code = $taxCategory->getCode();
         Assert::false(
             $this->isItemOnIndex('code', $code),
-            sprintf('Tax category with code %s exist', $code)
+            sprintf('Tax category with code %s exist', $code),
         );
     }
 
@@ -139,7 +128,7 @@ final class ManagingTaxCategoriesContext implements Context
     {
         Assert::true(
             $this->isItemOnIndex('name', $taxCategoryName),
-            sprintf('Tax category with name %s does not exist', $taxCategoryName)
+            sprintf('Tax category with name %s does not exist', $taxCategoryName),
         );
     }
 
@@ -152,7 +141,7 @@ final class ManagingTaxCategoriesContext implements Context
 
         Assert::false(
             $this->responseChecker->hasValue($this->client->update(), 'code', 'NEW_CODE'),
-            'The code field with value NEW_CODE exist'
+            'The code field with value NEW_CODE exist',
         );
     }
 
@@ -163,8 +152,8 @@ final class ManagingTaxCategoriesContext implements Context
     public function thisTaxCategoryNameShouldBe(TaxCategoryInterface $taxCategory, string $taxCategoryName): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show($taxCategory->getCode()), 'name', $taxCategoryName),
-            sprintf('Tax category name is not %s', $taxCategoryName)
+            $this->responseChecker->hasValue($this->client->show(Resources::TAX_CATEGORIES, $taxCategory->getCode()), 'name', $taxCategoryName),
+            sprintf('Tax category name is not %s', $taxCategoryName),
         );
     }
 
@@ -175,7 +164,7 @@ final class ManagingTaxCategoriesContext implements Context
     {
         Assert::same(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'code: The tax category with given code already exists.'
+            'code: The tax category with given code already exists.',
         );
     }
 
@@ -185,8 +174,8 @@ final class ManagingTaxCategoriesContext implements Context
     public function thereShouldStillBeOnlyOneTaxCategoryWith(string $element, string $value): void
     {
         Assert::same(
-            count($this->responseChecker->getCollectionItemsWithValue($this->client->index(), $element, $value)),
-            1
+            count($this->responseChecker->getCollectionItemsWithValue($this->client->index(Resources::TAX_CATEGORIES), $element, $value)),
+            1,
         );
     }
 
@@ -197,7 +186,7 @@ final class ManagingTaxCategoriesContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            sprintf('%s: Please enter tax category %s.', $element, $element)
+            sprintf('%s: Please enter tax category %s.', $element, $element),
         );
     }
 
@@ -224,18 +213,7 @@ final class ManagingTaxCategoriesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Tax category could not be created'
-        );
-    }
-
-    /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Tax category could not be edited'
+            'Tax category could not be created',
         );
     }
 
@@ -246,12 +224,12 @@ final class ManagingTaxCategoriesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful($this->client->getLastResponse()),
-            'Tax category could not be deleted'
+            'Tax category could not be deleted',
         );
     }
 
     private function isItemOnIndex(string $property, string $value): bool
     {
-        return $this->responseChecker->hasItemWithValue($this->client->index(), $property, $value);
+        return $this->responseChecker->hasItemWithValue($this->client->index(Resources::TAX_CATEGORIES), $property, $value);
     }
 }

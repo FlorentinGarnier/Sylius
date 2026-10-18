@@ -18,6 +18,7 @@ use Doctrine\Common\Collections\Collection;
 use Sylius\Component\Order\Model\AdjustmentInterface as BaseAdjustmentInterface;
 use Sylius\Component\Order\Model\OrderInterface as BaseOrderInterface;
 use Sylius\Component\Shipping\Model\Shipment as BaseShipment;
+use Webmozart\Assert\Assert;
 
 class Shipment extends BaseShipment implements ShipmentInterface
 {
@@ -31,9 +32,7 @@ class Shipment extends BaseShipment implements ShipmentInterface
      */
     protected $adjustments;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $adjustmentsTotal = 0;
 
     public function __construct()
@@ -46,6 +45,8 @@ class Shipment extends BaseShipment implements ShipmentInterface
 
     public function getOrder(): ?BaseOrderInterface
     {
+        Assert::nullOrIsInstanceOf($this->order, OrderInterface::class);
+
         return $this->order;
     }
 

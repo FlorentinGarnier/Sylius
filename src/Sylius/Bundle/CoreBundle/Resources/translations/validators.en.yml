@@ -1,4 +1,17 @@
 sylius:
+    admin:
+        password_reset_request:
+            email:
+                invalid: This email is not valid.
+                max: Email must be at most {{ limit }} characters long.
+                min: Email must be at least {{ limit }} characters long.
+                not_blank: Please enter an email.
+        reset_password:
+            mismatch: The entered passwords do not match.
+            password:
+                min: Password must be at least {{ limit }} characters long.
+                max: Password must be at most {{ limit }} characters long.
+                not_blank: Please enter the password.
     avatar_image:
         file:
             max_size: The image is too big - {{ size }}{{ suffix }}. Maximum allowed size is {{ limit }}{{ suffix }}.
@@ -29,6 +42,10 @@ sylius:
             invalid: This email is invalid.
             max: Email must not be longer than {{ limit }} characters.
             min: Email must be at least {{ limit }} characters long.
+    channel_price_history_config:
+        lowest_price_for_discounted_products_checking_period:
+            greater_than: 'Value must be greater than {{ compared_value }}'
+            less_than: 'Value must be less than {{ compared_value }}'
     channel_pricing:
         price:
             min: Price cannot be lower than 0.
@@ -52,6 +69,7 @@ sylius:
             not_valid: The currency code you entered is invalid.
     cart_item:
         not_available: '%itemName% does not have sufficient stock.'
+        insufficient_stock: 'Insufficient stock'
     order:
         currency_code:
             not_valid: The currency code you entered is invalid.
@@ -70,6 +88,8 @@ sylius:
         file:
             max_size: The image is too big - {{ size }}{{ suffix }}. Maximum allowed size is {{ limit }}{{ suffix }}.
             upload_ini_size: The image is too big. Maximum allowed size is {{ limit }}{{ suffix }}.
+    product_taxon:
+        unique: This taxon is already assigned to this product.
     product_variant:
         onHand:
             min: On hand must be greater than {{ limit }}.
@@ -90,7 +110,8 @@ sylius:
             min: Depth cannot be negative.
             invalid: Depth must be a number.
         channel_pricing:
-            all_defined: 'You must define price for every channel.'
+            all_defined: 'You must define price for every enabled channel.'
+            existing_code: Channel with code {{ channelCode }} does not exist.
     promotion_coupon:
         per_customer_usage_limit:
             min: Coupon usage limit per customer must be at least {{ limit }}.
@@ -106,6 +127,9 @@ sylius:
         file:
             max_size: The image is too big - {{ size }}{{ suffix }}. Maximum allowed size is {{ limit }}{{ suffix }}.
             upload_ini_size: The image is too big. Maximum allowed size is {{ limit }}{{ suffix }}.
+    translation:
+        locale_code:
+            invalid: 'Please choose one of the available locales: %locales%'
     user:
         email:
             unique: This email is already used.

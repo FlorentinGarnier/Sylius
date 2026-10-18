@@ -56,10 +56,8 @@ class HomePage extends SymfonyPage implements HomePageInterface
     public function getAvailableCurrencies(): array
     {
         return array_map(
-            function (NodeElement $element) {
-                return $element->getText();
-            },
-            $this->getElement('currency_selector')->findAll('css', '[data-test-available-currency]')
+            fn (NodeElement $element) => $element->getText(),
+            $this->getElement('currency_selector')->findAll('css', '[data-test-available-currency]'),
         );
     }
 
@@ -67,7 +65,7 @@ class HomePage extends SymfonyPage implements HomePageInterface
     {
         try {
             $this->getElement('currency_selector')->click(); // Needed for javascript scenarios
-        } catch (UnsupportedDriverActionException $exception) {
+        } catch (UnsupportedDriverActionException) {
         }
 
         $this->getElement('currency_selector')->clickLink($currencyCode);
@@ -81,10 +79,8 @@ class HomePage extends SymfonyPage implements HomePageInterface
     public function getAvailableLocales(): array
     {
         return array_map(
-            function (NodeElement $element) {
-                return $element->getText();
-            },
-            $this->getElement('locale_selector')->findAll('css', '[data-test-available-locale]')
+            fn (NodeElement $element) => $element->getText(),
+            $this->getElement('locale_selector')->findAll('css', '[data-test-available-locale]'),
         );
     }
 
@@ -96,10 +92,8 @@ class HomePage extends SymfonyPage implements HomePageInterface
     public function getLatestProductsNames(): array
     {
         return array_map(
-            function (NodeElement $element) {
-                return $element->getText();
-            },
-            $this->getElement('latest_products')->findAll('css', '[data-test-product-name]')
+            fn (NodeElement $element) => $element->getText(),
+            $this->getElement('latest_products')->findAll('css', '[data-test-product-name]'),
         );
     }
 

@@ -16,19 +16,16 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Component\Customer\Model\CustomerGroupInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingCustomerGroupsContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    public function __construct(ApiClientInterface $client, ResponseCheckerInterface $responseChecker)
-    {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
+    public function __construct(
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+    ) {
     }
 
     /**
@@ -36,7 +33,7 @@ final class ManagingCustomerGroupsContext implements Context
      */
     public function iWantToCreateANewCustomerGroup(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::CUSTOMER_GROUPS);
     }
 
     /**
@@ -72,15 +69,7 @@ final class ManagingCustomerGroupsContext implements Context
      */
     public function iWantToEditThisCustomerGroup(CustomerGroupInterface $customerGroup): void
     {
-        $this->client->buildUpdateRequest($customerGroup->getCode());
-    }
-
-    /**
-     * @When I (try to) save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
+        $this->client->buildUpdateRequest(Resources::CUSTOMER_GROUPS, $customerGroup->getCode());
     }
 
     /**
@@ -89,7 +78,7 @@ final class ManagingCustomerGroupsContext implements Context
      */
     public function iWantToBrowseCustomerGroups(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::CUSTOMER_GROUPS);
     }
 
     /**
@@ -97,7 +86,7 @@ final class ManagingCustomerGroupsContext implements Context
      */
     public function iDeleteTheCustomerGroup(CustomerGroupInterface $customerGroup): void
     {
-        $this->client->delete($customerGroup->getCode());
+        $this->client->delete(Resources::CUSTOMER_GROUPS, $customerGroup->getCode());
     }
 
     /**
@@ -106,8 +95,8 @@ final class ManagingCustomerGroupsContext implements Context
     public function theCustomerGroupShouldAppearInTheStore(CustomerGroupInterface $customerGroup): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'code', $customerGroup->getCode()),
-            sprintf('Customer group with code %s does not exist', $customerGroup->getCode())
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::CUSTOMER_GROUPS), 'code', $customerGroup->getCode()),
+            sprintf('Customer group with code %s does not exist', $customerGroup->getCode()),
         );
     }
 
@@ -118,8 +107,8 @@ final class ManagingCustomerGroupsContext implements Context
     public function thisCustomerGroupWithNameShouldAppearInTheStore(string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('Customer group with name %s does not exist', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::CUSTOMER_GROUPS), 'name', $name),
+            sprintf('Customer group with name %s does not exist', $name),
         );
     }
 
@@ -129,7 +118,7 @@ final class ManagingCustomerGroupsContext implements Context
      */
     public function iShouldSeeCustomerGroupsInTheList(int $amountOfCustomerGroups = 1): void
     {
-        Assert::same($this->responseChecker->countCollectionItems($this->client->index()), $amountOfCustomerGroups);
+        Assert::same($this->responseChecker->countCollectionItems($this->client->index(Resources::CUSTOMER_GROUPS)), $amountOfCustomerGroups);
     }
 
     /**
@@ -138,8 +127,8 @@ final class ManagingCustomerGroupsContext implements Context
     public function thisCustomerGroupShouldStillBeNamed(CustomerGroupInterface $customerGroup, string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show($customerGroup->getCode()), 'name', $name),
-            'Customer groups name is not ' . $name
+            $this->responseChecker->hasValue($this->client->show(Resources::CUSTOMER_GROUPS, $customerGroup->getCode()), 'name', $name),
+            'Customer groups name is not ' . $name,
         );
     }
 
@@ -150,7 +139,7 @@ final class ManagingCustomerGroupsContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'name: Please enter a customer group name.'
+            'name: Please enter a customer group name.',
         );
     }
 
@@ -161,7 +150,7 @@ final class ManagingCustomerGroupsContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'Customer group code has to be unique.'
+            'Customer group code has to be unique.',
         );
     }
 
@@ -182,7 +171,7 @@ final class ManagingCustomerGroupsContext implements Context
 
         Assert::false(
             $this->responseChecker->hasValue($this->client->update(), 'code', 'NEW_CODE'),
-            'The code field with value NEW_CODE exist'
+            'The code field with value NEW_CODE exist',
         );
     }
 
@@ -202,18 +191,7 @@ final class ManagingCustomerGroupsContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Customer group could not be created'
-        );
-    }
-
-    /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Customer group could not be edited'
+            'Customer group could not be created',
         );
     }
 
@@ -224,14 +202,14 @@ final class ManagingCustomerGroupsContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful(
-            $this->client->getLastResponse()
-        ),
-            'Customer group could not be deleted'
+                $this->client->getLastResponse(),
+            ),
+            'Customer group could not be deleted',
         );
     }
 
     private function isItemOnIndex(string $property, string $value): bool
     {
-        return $this->responseChecker->hasItemWithValue($this->client->index(), $property, $value);
+        return $this->responseChecker->hasItemWithValue($this->client->index(Resources::CUSTOMER_GROUPS), $property, $value);
     }
 }

@@ -15,15 +15,16 @@ namespace Sylius\Behat\Context\Api\Admin;
 
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiSecurityClientInterface;
+use Sylius\Behat\Service\SharedStorageInterface;
+use Symfony\Component\BrowserKit\Exception\BadMethodCallException;
 use Webmozart\Assert\Assert;
 
 final class LoginContext implements Context
 {
-    private ApiSecurityClientInterface $client;
-
-    public function __construct(ApiSecurityClientInterface $client)
-    {
-        $this->client = $client;
+    public function __construct(
+        private ApiSecurityClientInterface $apiSecurityClient,
+        private SharedStorageInterface $sharedStorage,
+    ) {
     }
 
     /**
@@ -31,7 +32,7 @@ final class LoginContext implements Context
      */
     public function iWantToLogIn(): void
     {
-        $this->client->prepareLoginRequest();
+        $this->apiSecurityClient->prepareLoginRequest();
     }
 
     /**
@@ -39,7 +40,7 @@ final class LoginContext implements Context
      */
     public function iSpecifyTheUsername(string $username): void
     {
-        $this->client->setEmail($username);
+        $this->apiSecurityClient->setEmail($username);
     }
 
     /**
@@ -47,7 +48,7 @@ final class LoginContext implements Context
      */
     public function iSpecifyThePasswordAs(string $password): void
     {
-        $this->client->setPassword($password);
+        $this->apiSecurityClient->setPassword($password);
     }
 
     /**
@@ -55,7 +56,7 @@ final class LoginContext implements Context
      */
     public function iLogIn(): void
     {
-        $this->client->call();
+        $this->apiSecurityClient->call();
     }
 
     /**
@@ -63,7 +64,7 @@ final class LoginContext implements Context
      */
     public function iShouldBeLoggedIn(): void
     {
-        Assert::true($this->client->isLoggedIn(), 'Admin should be logged in, but they are not.');
+        Assert::true($this->apiSecurityClient->isLoggedIn(), 'Admin should be logged in, but they are not.');
     }
 
     /**
@@ -71,7 +72,11 @@ final class LoginContext implements Context
      */
     public function iShouldNotBeLoggedIn(): void
     {
-        Assert::false($this->client->isLoggedIn(), 'Admin should not be logged in, but they are.');
+        try {
+            Assert::false($this->apiSecurityClient->isLoggedIn(), 'Admin should not be logged in, but they are.');
+        } catch (BadMethodCallException) {
+            Assert::same($this->sharedStorage->get('last_response')->getStatusCode(), 401, 'Admin should not be logged in, but they are.');
+        }
     }
 
     /**
@@ -79,7 +84,7 @@ final class LoginContext implements Context
      */
     public function iShouldBeNotifiedAboutBadCredentials(): void
     {
-        Assert::same($this->client->getErrorMessage(), 'Invalid credentials.');
+        Assert::same($this->apiSecurityClient->getErrorMessage(), 'Invalid credentials.');
     }
 
     /**

@@ -29,7 +29,7 @@ final class MailerListener
     public function __construct(
         private SenderInterface $emailSender,
         private ChannelContextInterface $channelContext,
-        private LocaleContextInterface $localeContext
+        private LocaleContextInterface $localeContext,
     ) {
     }
 
@@ -71,14 +71,17 @@ final class MailerListener
 
     private function sendEmail(UserInterface $user, string $emailCode): void
     {
+        $email = $user->getEmail();
+        Assert::notNull($email);
+
         $this->emailSender->send(
             $emailCode,
-            [$user->getEmail()],
+            [$email],
             [
                 'user' => $user,
                 'channel' => $this->channelContext->getChannel(),
                 'localeCode' => $this->localeContext->getLocaleCode(),
-            ]
+            ],
         );
     }
 }

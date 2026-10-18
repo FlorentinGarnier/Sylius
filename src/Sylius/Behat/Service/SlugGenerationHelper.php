@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Service;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
-use DMore\ChromeDriver\ChromeDriver;
 
 abstract class SlugGenerationHelper
 {
@@ -44,7 +42,7 @@ abstract class SlugGenerationHelper
 
     public static function isSlugReadonly(Session $session, NodeElement $element): bool
     {
-        if (!$session->getDriver() instanceof Selenium2Driver && !$session->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isNotJavascript($session->getDriver())) {
             return $element->hasAttribute('readonly');
         }
 
@@ -57,7 +55,7 @@ abstract class SlugGenerationHelper
     {
         return $session->wait(1000, sprintf(
             'undefined != $(document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue).attr("readonly")',
-            str_replace('"', '\"', $element->getXpath())
+            str_replace('"', '\"', $element->getXpath()),
         ));
     }
 
@@ -65,7 +63,7 @@ abstract class SlugGenerationHelper
     {
         return $session->wait(1000, sprintf(
             'undefined == $(document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue).attr("readonly")',
-            str_replace('"', '\"', $element->getXpath())
+            str_replace('"', '\"', $element->getXpath()),
         ));
     }
 }

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\AdminBundle\Twig;
 
-use Sylius\Bundle\CoreBundle\Application\Kernel;
+use Sylius\Bundle\CoreBundle\SyliusCoreBundle;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -33,7 +33,7 @@ final class NotificationWidgetExtension extends AbstractExtension
                 [
                     'needs_environment' => true,
                     'is_safe' => ['html'],
-                ]
+                ],
             ),
         ];
     }
@@ -46,7 +46,7 @@ final class NotificationWidgetExtension extends AbstractExtension
 
         return $environment->render('@SyliusAdmin/_notification.html.twig', [
             'frequency' => $this->checkFrequency,
-            'currentVersion' => Kernel::VERSION,
+            'currentVersion' => SyliusCoreBundle::VERSION,
         ]);
     }
 }

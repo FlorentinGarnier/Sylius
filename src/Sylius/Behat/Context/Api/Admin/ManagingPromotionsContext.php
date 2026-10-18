@@ -16,21 +16,16 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Component\Core\Model\PromotionInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingPromotionsContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
     }
 
     /**
@@ -39,7 +34,7 @@ final class ManagingPromotionsContext implements Context
      */
     public function iWantToBrowsePromotions(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::PROMOTIONS);
     }
 
     /**
@@ -47,7 +42,7 @@ final class ManagingPromotionsContext implements Context
      */
     public function iWantToCreateANewPromotion(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::PROMOTIONS);
     }
 
     /**
@@ -83,7 +78,7 @@ final class ManagingPromotionsContext implements Context
     {
         Assert::same(
             count($this->responseChecker->getCollection($this->client->getLastResponse())),
-            $amount
+            $amount,
         );
     }
 
@@ -95,7 +90,7 @@ final class ManagingPromotionsContext implements Context
         $returnedPromotion = current($this->responseChecker->getCollectionItemsWithValue(
             $this->client->getLastResponse(),
             'name',
-            $promotionName
+            $promotionName,
         ));
 
         Assert::notNull($returnedPromotion, sprintf('There is no promotion %s in registry', $promotionName));
@@ -109,12 +104,12 @@ final class ManagingPromotionsContext implements Context
         $returnedPromotion = current($this->responseChecker->getCollectionItemsWithValue(
             $this->client->getLastResponse(),
             'name',
-            $promotion->getName()
+            $promotion->getName(),
         ));
 
         Assert::true(
             $returnedPromotion['couponBased'],
-            sprintf('The promotion %s isn\'t coupon based', $promotion->getName())
+            sprintf('The promotion %s isn\'t coupon based', $promotion->getName()),
         );
     }
 
@@ -126,7 +121,7 @@ final class ManagingPromotionsContext implements Context
         $returnedPromotion = current($this->responseChecker->getCollectionItemsWithValue(
             $this->client->getLastResponse(),
             'name',
-            $promotion->getName()
+            $promotion->getName(),
         ));
 
         Assert::keyExists($returnedPromotion, 'coupons');
@@ -138,7 +133,7 @@ final class ManagingPromotionsContext implements Context
      */
     public function iDeletePromotion(PromotionInterface $promotion): void
     {
-        $this->client->delete($promotion->getCode());
+        $this->client->delete(Resources::PROMOTIONS, $promotion->getCode());
     }
 
     /**
@@ -148,7 +143,7 @@ final class ManagingPromotionsContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful($this->client->getLastResponse()),
-            'Promotion still exists, but it should not'
+            'Promotion still exists, but it should not',
         );
     }
 
@@ -157,12 +152,12 @@ final class ManagingPromotionsContext implements Context
      */
     public function promotionShouldNotExistInTheRegistry(PromotionInterface $promotion): void
     {
-        $response = $this->client->index();
+        $response = $this->client->index(Resources::PROMOTIONS);
         $promotionName = (string) $promotion->getName();
 
         Assert::false(
             $this->responseChecker->hasItemWithValue($response, 'name', $promotionName),
-            sprintf('Promotion with name %s still exist', $promotionName)
+            sprintf('Promotion with name %s still exist', $promotionName),
         );
     }
 
@@ -180,7 +175,7 @@ final class ManagingPromotionsContext implements Context
     public function thePromotionShouldNotAppliesToDiscountedItems(PromotionInterface $promotion): void
     {
         Assert::false(
-            $this->responseChecker->getValue($this->client->show($promotion->getCode()), 'appliesToDiscounted')
+            $this->responseChecker->getValue($this->client->show(Resources::PROMOTIONS, $promotion->getCode()), 'appliesToDiscounted'),
         );
     }
 }

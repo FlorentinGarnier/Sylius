@@ -31,6 +31,7 @@ final class OrderItemsSubtotalCalculatorTest extends MockeryTestCase
 
     /**
      * @test
+     *
      * @depends it_can_be_instantiated
      */
     public function it_can_calculate_the_subtotal_of_order_items(OrderItemsSubtotalCalculator $calculator): void
@@ -44,10 +45,11 @@ final class OrderItemsSubtotalCalculatorTest extends MockeryTestCase
 
     /**
      * @test
+     *
      * @depends it_can_be_instantiated
      */
     public function it_can_calculate_a_subtotal_if_there_are_no_order_items(
-        OrderItemsSubtotalCalculator $calculator
+        OrderItemsSubtotalCalculator $calculator,
     ): void {
         $subTotal = $calculator->getSubtotal($this->getOrderMock([]));
         $this->assertEquals(0, $subTotal);
@@ -56,6 +58,7 @@ final class OrderItemsSubtotalCalculatorTest extends MockeryTestCase
     private function getOrderItemMock(int $subTotal): OrderItemInterface
     {
         $orderItem = Mockery::mock(OrderItemInterface::class);
+        /** @phpstan-ignore-next-line */
         $orderItem
             ->shouldReceive('getSubTotal')
             ->once()
@@ -68,10 +71,12 @@ final class OrderItemsSubtotalCalculatorTest extends MockeryTestCase
     private function getOrderMock(array $orderItems): OrderInterface
     {
         $order = Mockery::mock(OrderInterface::class);
+        /** @phpstan-ignore-next-line */
         $order
             ->shouldReceive('getItems->toArray')
             ->once()
-            ->andReturn($orderItems);
+            ->andReturn($orderItems)
+        ;
 
         return $order;
     }

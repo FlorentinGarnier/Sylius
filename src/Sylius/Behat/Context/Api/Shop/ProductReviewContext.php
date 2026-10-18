@@ -17,6 +17,7 @@ use ApiPlatform\Core\Api\IriConverterInterface;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Product\Model\ProductInterface;
 use Sylius\Component\Review\Model\ReviewInterface;
@@ -24,24 +25,12 @@ use Webmozart\Assert\Assert;
 
 final class ProductReviewContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
-    private IriConverterInterface $iriConverter;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker,
-        SharedStorageInterface $sharedStorage,
-        IriConverterInterface $iriConverter
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private SharedStorageInterface $sharedStorage,
+        private IriConverterInterface $iriConverter,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
-        $this->sharedStorage = $sharedStorage;
-        $this->iriConverter = $iriConverter;
     }
 
     /**
@@ -52,7 +41,7 @@ final class ProductReviewContext implements Context
         /** @var ProductInterface $product */
         $product = $this->sharedStorage->get('product');
 
-        $this->client->index();
+        $this->client->index(Resources::PRODUCT_REVIEWS);
         $this->client->addFilter('reviewSubject', $this->iriConverter->getIriFromItem($product));
         $this->client->filter();
     }
@@ -71,7 +60,7 @@ final class ProductReviewContext implements Context
      */
     public function iWantToReviewProduct(ProductInterface $product): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::PRODUCT_REVIEWS);
         $this->client->addRequestData('product', $this->iriConverter->getIriFromItem($product));
     }
 
@@ -113,7 +102,7 @@ final class ProductReviewContext implements Context
         /** @var ProductInterface $product */
         $product = $this->sharedStorage->get('product');
 
-        $this->client->index();
+        $this->client->index(Resources::PRODUCT_REVIEWS);
         $this->client->addFilter('reviewSubject', $this->iriConverter->getIriFromItem($product));
         $this->client->addFilter('itemsPerPage', 3);
         $this->client->addFilter('order[createdAt]', 'desc');
@@ -145,7 +134,7 @@ final class ProductReviewContext implements Context
     {
         Assert::same(
             $this->responseChecker->getValue($this->client->getLastResponse(), 'status'),
-            ReviewInterface::STATUS_NEW
+            ReviewInterface::STATUS_NEW,
         );
     }
 

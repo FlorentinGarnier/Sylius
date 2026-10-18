@@ -28,6 +28,7 @@ final class Configuration implements ConfigurationInterface
         $rootNode
             ->fixXmlConfig('event')
             ->children()
+                ->booleanNode('use_webpack')->defaultTrue()->end()
                 ->arrayNode('events')
                     ->useAttributeAsKey('event_name')
                     ->arrayPrototype()
@@ -40,7 +41,7 @@ final class Configuration implements ConfigurationInterface
                                     ->canBeDisabled()
                                     ->beforeNormalization()
                                         ->ifString()
-                                        ->then(static fn(?string $template): array => ['template' => $template])
+                                        ->then(static fn (?string $template): array => ['template' => $template])
                                     ->end()
                                     ->children()
                                         ->booleanNode('enabled')->defaultNull()->end()

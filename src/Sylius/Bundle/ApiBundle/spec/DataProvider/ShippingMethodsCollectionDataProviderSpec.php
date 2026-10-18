@@ -30,7 +30,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         ShipmentRepositoryInterface $shipmentRepository,
         ShippingMethodRepositoryInterface $shippingMethodsRepository,
         ShippingMethodsResolverInterface $shippingMethodsResolver,
-        ChannelContextInterface $channelContext
+        ChannelContextInterface $channelContext,
     ): void {
         $this->beConstructedWith($shipmentRepository, $shippingMethodsRepository, $shippingMethodsResolver, $channelContext);
     }
@@ -43,7 +43,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
                 Request::METHOD_GET,
                 [
                     'collection_operation_name' => 'shop_get',
-                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
                 ],
             )
             ->shouldReturn(true)
@@ -55,7 +55,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
                 Request::METHOD_GET,
                 [
                     'collection_operation_name' => 'admin_get',
-                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
                 ],
             )
             ->shouldReturn(false)
@@ -67,7 +67,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
                 Request::METHOD_GET,
                 [
                     'collection_operation_name' => 'shop_get',
-                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                    'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
                 ],
             )
             ->shouldReturn(false)
@@ -80,7 +80,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         ShipmentInterface $shipment,
         ChannelContextInterface $channelContext,
         ShippingMethodsResolverInterface $shippingMethodsResolver,
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
 
@@ -107,7 +107,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         ShipmentInterface $shipment,
         ChannelContextInterface $channelContext,
         ShippingMethodsResolverInterface $shippingMethodsResolver,
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
 
@@ -135,7 +135,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         ShipmentInterface $shipment,
         ShippingMethodInterface $shippingMethod,
         ChannelContextInterface $channelContext,
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
 
@@ -162,8 +162,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         ChannelContextInterface $channelContext,
         ChannelInterface $channel,
         ShippingMethodRepositoryInterface $shippingMethodsRepository,
-        ShippingMethodInterface $shippingMethod
-
+        ShippingMethodInterface $shippingMethod,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
 
@@ -172,7 +171,7 @@ final class ShippingMethodsCollectionDataProviderSpec extends ObjectBehavior
         $this
             ->getCollection(
                 ShippingMethodInterface::class,
-                Request::METHOD_GET
+                Request::METHOD_GET,
             )
             ->shouldReturn([$shippingMethod])
         ;

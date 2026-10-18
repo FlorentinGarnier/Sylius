@@ -32,12 +32,12 @@ final class PromotionCouponEligibilityValidatorSpec extends ObjectBehavior
     function let(
         PromotionCouponRepositoryInterface $promotionCouponRepository,
         OrderRepositoryInterface $orderRepository,
-        AppliedCouponEligibilityCheckerInterface $appliedCouponEligibilityChecker
+        AppliedCouponEligibilityCheckerInterface $appliedCouponEligibilityChecker,
     ): void {
         $this->beConstructedWith(
             $promotionCouponRepository,
             $orderRepository,
-            $appliedCouponEligibilityChecker
+            $appliedCouponEligibilityChecker,
         );
     }
 
@@ -60,7 +60,7 @@ final class PromotionCouponEligibilityValidatorSpec extends ObjectBehavior
         PromotionCouponInterface $promotionCoupon,
         OrderRepositoryInterface $orderRepository,
         OrderInterface $cart,
-        ExecutionContextInterface $executionContext
+        ExecutionContextInterface $executionContext,
     ): void {
         $this->initialize($executionContext);
         $constraint = new PromotionCouponEligibility();
@@ -87,7 +87,7 @@ final class PromotionCouponEligibilityValidatorSpec extends ObjectBehavior
         OrderRepositoryInterface $orderRepository,
         OrderInterface $cart,
         ExecutionContextInterface $executionContext,
-        ConstraintViolationBuilderInterface $constraintViolationBuilder
+        ConstraintViolationBuilderInterface $constraintViolationBuilder,
     ): void {
         $this->initialize($executionContext);
         $constraint = new PromotionCouponEligibility();
@@ -106,6 +106,30 @@ final class PromotionCouponEligibilityValidatorSpec extends ObjectBehavior
         $executionContext->buildViolation($constraint->message)->willReturn($constraintViolationBuilder);
         $constraintViolationBuilder->atPath('couponCode')->willReturn($constraintViolationBuilder);
         $constraintViolationBuilder->addViolation()->shouldBeCalled();
+
+        $this->validate($value, $constraint);
+    }
+
+    function it_adds_violation_if_promotion_coupon_is_not_instance_of_promotion_coupon_interface(
+        PromotionCouponRepositoryInterface $promotionCouponRepository,
+        OrderRepositoryInterface $orderRepository,
+        ExecutionContextInterface $executionContext,
+        ConstraintViolationBuilderInterface $constraintViolationBuilder,
+    ): void {
+        $this->initialize($executionContext);
+        $constraint = new PromotionCouponEligibility();
+        $constraint->message = 'message';
+
+        $value = UpdateCart::createWithCouponData('couponCode');
+        $value->setOrderTokenValue('token');
+
+        $promotionCouponRepository->findOneBy(['code' => 'couponCode'])->willReturn(null);
+
+        $executionContext->buildViolation($constraint->message)->willReturn($constraintViolationBuilder);
+        $constraintViolationBuilder->atPath('couponCode')->willReturn($constraintViolationBuilder);
+        $constraintViolationBuilder->addViolation()->shouldBeCalled();
+
+        $orderRepository->findCartByTokenValue('token')->shouldNotBeCalled();
 
         $this->validate($value, $constraint);
     }

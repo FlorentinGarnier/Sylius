@@ -9,11 +9,11 @@ Feature: Receiving no discount if coupon promotion is not eligible
         And the store has a product "PHP T-Shirt" priced at "$100.00"
         And the store has promotion "Christmas sale" with coupon "SANTA2016"
         And this promotion gives "$10.00" discount to every order with quantity at least 2
-        And the store ships everywhere for free
+        And the store ships everywhere for Free
         And the store allows paying "Cash on Delivery"
         And I am a logged in customer
 
-    @api
+    @ui @api
     Scenario: Receiving no discount if promotion for the applied coupon is not enabled in the current channel
         Given this promotion is not available in any channel
         When I add 2 products "PHP T-Shirt" to the cart

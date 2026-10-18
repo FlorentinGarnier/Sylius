@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace spec\Sylius\Bundle\CoreBundle\Theme;
 
 use PhpSpec\ObjectBehavior;
+use Prophecy\Argument;
 use Sylius\Bundle\ThemeBundle\Context\ThemeContextInterface;
 use Sylius\Bundle\ThemeBundle\Model\ThemeInterface;
 use Sylius\Bundle\ThemeBundle\Repository\ThemeRepositoryInterface;
@@ -37,7 +38,7 @@ final class ChannelBasedThemeContextSpec extends ObjectBehavior
         ChannelContextInterface $channelContext,
         ThemeRepositoryInterface $themeRepository,
         ChannelInterface $channel,
-        ThemeInterface $theme
+        ThemeInterface $theme,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
         $channel->getThemeName()->willReturn('theme/name');
@@ -49,17 +50,50 @@ final class ChannelBasedThemeContextSpec extends ObjectBehavior
     function it_returns_null_if_channel_has_no_theme(
         ChannelContextInterface $channelContext,
         ThemeRepositoryInterface $themeRepository,
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ): void {
         $channelContext->getChannel()->willReturn($channel);
         $channel->getThemeName()->willReturn(null);
-        $themeRepository->findOneByName(null)->willReturn(null);
+        $themeRepository->findOneByName(Argument::any())->shouldNotBeCalled();
+
+        $this->getTheme()->shouldReturn(null);
+    }
+
+    function it_returns_previously_found_theme(
+        ChannelContextInterface $channelContext,
+        ThemeRepositoryInterface $themeRepository,
+        ThemeInterface $theme,
+    ): void {
+        $object = $this->object->getWrappedObject();
+        $objectReflection = new \ReflectionObject($object);
+        $property = $objectReflection->getProperty('theme');
+        $property->setAccessible(true);
+        $property->setValue($object, $theme->getWrappedObject());
+
+        $channelContext->getChannel()->shouldNotBeCalled();
+        $themeRepository->findOneByName(Argument::any())->shouldNotBeCalled();
+
+        $this->getTheme()->shouldReturn($theme);
+    }
+
+    function it_returns_null_if_the_theme_was_not_found_previously(
+        ChannelContextInterface $channelContext,
+        ThemeRepositoryInterface $themeRepository,
+    ): void {
+        $object = $this->object->getWrappedObject();
+        $objectReflection = new \ReflectionObject($object);
+        $property = $objectReflection->getProperty('theme');
+        $property->setAccessible(true);
+        $property->setValue($object, null);
+
+        $channelContext->getChannel()->shouldNotBeCalled();
+        $themeRepository->findOneByName(Argument::any())->shouldNotBeCalled();
 
         $this->getTheme()->shouldReturn(null);
     }
 
     function it_returns_null_if_there_is_no_channel(
-        ChannelContextInterface $channelContext
+        ChannelContextInterface $channelContext,
     ): void {
         $channelContext->getChannel()->willThrow(ChannelNotFoundException::class);
 
@@ -67,7 +101,7 @@ final class ChannelBasedThemeContextSpec extends ObjectBehavior
     }
 
     function it_returns_null_if_any_exception_is_thrown_during_getting_the_channel(
-        ChannelContextInterface $channelContext
+        ChannelContextInterface $channelContext,
     ): void {
         $channelContext->getChannel()->willThrow(\Exception::class);
 

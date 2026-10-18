@@ -1,10 +1,10 @@
 <h1 align="center">
     <a href="https://sylius.com/github-readme/link/" target="_blank">
-        <img src="https://sylius.com/assets/github-readme.png?v111" />
+        <img src="https://sylius.com/assets/github-readme.png?112" />
     </a>
 </h1>
 
-Sylius is an Open Source eCommerce platform on top of [**Symfony**](https://symfony.com). 
+Sylius is an Open Source eCommerce framework on top of [**Symfony**](https://symfony.com). 
 
 The highest quality of code, strong testing culture, built-in Agile (BDD) workflow and exceptional flexibility make it the best solution for applications tailored to your business requirements. 
 Powerful REST API allows for easy integrations and creating unique customer experience on any device.
@@ -12,6 +12,8 @@ Powerful REST API allows for easy integrations and creating unique customer expe
 We're using full-stack Behavior-Driven-Development, with [phpspec](https://phpspec.net) and [Behat](http://behat.org).
 
 Enjoy being an eCommerce Developer again!
+
+<img src="https://sylius.com/assets/readme/readme-main.png" />
 
 ⚙️ Installation
 --------------
@@ -32,7 +34,7 @@ Get Sylius support on [Slack](https://sylius.com/slack), [Forum](https://forum.s
 
 Stay updated by following our [Twitter](https://twitter.com/Sylius) and [Facebook](https://www.facebook.com/SyliusEcommerce/).
 
-Would like to help us and build the most developer-friendly eCommerce platform? Start from reading our [Contributing Guide](https://docs.sylius.com/en/latest/book/index.html#contributing)!
+Would like to help us and build the most developer-friendly eCommerce framework? Start from reading our [Contributing Guide](https://docs.sylius.com/en/latest/book/index.html#contributing)!
 
 👮 Security issues
 ------------------
@@ -42,6 +44,10 @@ Instead, all security issues must be sent to `security@sylius.com`.
 
 📦 Plugins and Extensions: Sylius Store
 ---------------------------------------
+
+<a href="https://store.sylius.com/" target="_blank">
+    <img src="https://sylius.com/assets/readme/readme-store.png" />
+</a>
    
 You can find Sylius plugins on [our Sylius Store](https://sylius.com/plugins/) which is a Marketplace with Sylius extensions. 
 
@@ -49,6 +55,10 @@ Or search for [packages marked as *sylius-plugin*](https://packagist.org/explore
 
 ➕ Sylius Plus
 --------------
+
+<a href="https://sylius.com/plus/" target="_blank">
+    <img src="https://sylius.com/assets/readme/readme-plus.png" />
+</a>
 
 Sylius Plus gives you all the power of Open Source and much more. It comes with the following set of enterprise-grade features:
 

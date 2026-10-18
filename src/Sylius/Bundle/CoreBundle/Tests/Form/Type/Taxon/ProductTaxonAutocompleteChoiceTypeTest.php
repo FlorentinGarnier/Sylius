@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sylius\Bundle\CoreBundle\Tests\Form\Type\Taxon;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Sylius\Bundle\CoreBundle\Form\Type\Taxon\ProductTaxonAutocompleteChoiceType;
 use Sylius\Bundle\ResourceBundle\Form\Type\ResourceAutocompleteChoiceType;
@@ -29,6 +30,8 @@ use Symfony\Component\Form\Test\TypeTestCase;
 
 final class ProductTaxonAutocompleteChoiceTypeTest extends TypeTestCase
 {
+    use ProphecyTrait;
+
     private ObjectProphecy $resourceRepositoryRegistry;
 
     private ObjectProphecy $productTaxonFactory;
@@ -48,7 +51,7 @@ final class ProductTaxonAutocompleteChoiceTypeTest extends TypeTestCase
     {
         $productTaxonAutoCompleteType = new ProductTaxonAutocompleteChoiceType(
             $this->productTaxonFactory->reveal(),
-            $this->productTaxonRepository->reveal()
+            $this->productTaxonRepository->reveal(),
         );
         $resourceAutoCompleteType = new ResourceAutocompleteChoiceType($this->resourceRepositoryRegistry->reveal());
 

@@ -15,7 +15,7 @@ namespace spec\Sylius\Bundle\ApiBundle\CommandHandler\Catalog;
 
 use PhpSpec\ObjectBehavior;
 use Sylius\Bundle\ApiBundle\Command\Catalog\AddProductReview;
-use Sylius\Bundle\ApiBundle\Provider\CustomerProviderInterface;
+use Sylius\Bundle\CoreBundle\Resolver\CustomerResolverInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Repository\ProductRepositoryInterface;
@@ -29,13 +29,13 @@ final class AddProductReviewHandlerSpec extends ObjectBehavior
         FactoryInterface $productReviewFactory,
         RepositoryInterface $productReviewRepository,
         ProductRepositoryInterface $productRepository,
-        CustomerProviderInterface $customerProvider
+        CustomerResolverInterface $customerResolver,
     ): void {
         $this->beConstructedWith(
             $productReviewFactory,
             $productReviewRepository,
             $productRepository,
-            $customerProvider
+            $customerResolver,
         );
     }
 
@@ -43,14 +43,14 @@ final class AddProductReviewHandlerSpec extends ObjectBehavior
         FactoryInterface $productReviewFactory,
         RepositoryInterface $productReviewRepository,
         ProductRepositoryInterface $productRepository,
-        CustomerProviderInterface $customerProvider,
+        CustomerResolverInterface $customerResolver,
         ProductInterface $product,
         CustomerInterface $customer,
-        ReviewInterface $review
+        ReviewInterface $review,
     ): void {
         $productRepository->findOneByCode('winter_cap')->willReturn($product);
 
-        $customerProvider->provide('mark@example.com')->willReturn($customer);
+        $customerResolver->resolve('mark@example.com')->willReturn($customer);
 
         $productReviewFactory->createNew()->willReturn($review);
 
@@ -69,13 +69,13 @@ final class AddProductReviewHandlerSpec extends ObjectBehavior
             5,
             'Really good stuff',
             'winter_cap',
-            'mark@example.com'
+            'mark@example.com',
         ));
     }
 
     function it_throws_an_exception_if_email_has_not_been_found(
         ProductRepositoryInterface $productRepository,
-        ProductInterface $product
+        ProductInterface $product,
     ): void {
         $productRepository->findOneByCode('winter_cap')->willReturn($product);
 
@@ -86,7 +86,7 @@ final class AddProductReviewHandlerSpec extends ObjectBehavior
                     'Good stuff',
                     5,
                     'Really good stuff',
-                    'winter_cap'
+                    'winter_cap',
                 ),
             ])
         ;

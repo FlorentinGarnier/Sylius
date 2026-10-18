@@ -47,7 +47,7 @@ final class SyliusUiExtensionTest extends AbstractExtensionTestCase
                 'second_event' => [
                     'another_block' => new Definition(TemplateBlock::class, ['another_block', 'second_event', 'another.html.twig', [], 0, true]),
                 ],
-            ]
+            ],
         );
     }
 
@@ -73,8 +73,29 @@ final class SyliusUiExtensionTest extends AbstractExtensionTestCase
                 'second_block' => new Definition(TemplateBlock::class, ['second_block', 'event_name', 'second.html.twig', [], 0, true]),
                 'third_block' => new Definition(TemplateBlock::class, ['third_block', 'event_name', 'third.html.twig', [], 0, true]),
                 'fourth_block' => new Definition(TemplateBlock::class, ['fourth_block', 'event_name', 'fourth.html.twig', [], -5, true]),
-            ]]
+            ]],
         );
+    }
+
+    /** @test */
+    public function it_uses_webpack_when_parameter_is_not_defined(): void
+    {
+        $this->container->setParameter('kernel.debug', true);
+
+        $this->load();
+
+        $this->assertContainerBuilderHasParameter('sylius_ui.use_webpack', true);
+    }
+
+    /** @test */
+    public function it_doesnt_use_webpack_when_parameter_is_set_to_false(): void
+    {
+        $this->container->setParameter('kernel.debug', true);
+        $this->container->prependExtensionConfig('sylius_ui', ['use_webpack' => false]);
+
+        $this->load();
+
+        $this->assertContainerBuilderHasParameter('sylius_ui.use_webpack', false);
     }
 
     protected function getContainerExtensions(): array

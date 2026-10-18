@@ -20,11 +20,8 @@ use Webmozart\Assert\Assert;
 
 final class ZoneContext implements Context
 {
-    private RepositoryInterface $zoneRepository;
-
-    public function __construct(RepositoryInterface $zoneRepository)
+    public function __construct(private RepositoryInterface $zoneRepository)
     {
-        $this->zoneRepository = $zoneRepository;
     }
 
     /**
@@ -44,7 +41,7 @@ final class ZoneContext implements Context
         $zone = $this->zoneRepository->findOneBy(['name' => $codeOrName]);
         Assert::notNull(
             $zone,
-            'Zone does not exist.'
+            'Zone does not exist.',
         );
 
         return $zone;
@@ -58,7 +55,7 @@ final class ZoneContext implements Context
         $zone = $this->zoneRepository->findOneBy(['code' => 'RoW']);
         Assert::notNull(
             $zone,
-            'Rest of the world zone does not exist.'
+            'Rest of the world zone does not exist.',
         );
 
         return $zone;

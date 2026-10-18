@@ -27,7 +27,7 @@ final class DefaultUsernameORMListener
 {
     public function onFlush(OnFlushEventArgs $onFlushEventArgs)
     {
-        $entityManager = $onFlushEventArgs->getEntityManager();
+        $entityManager = $onFlushEventArgs->getObjectManager();
         $unitOfWork = $entityManager->getUnitOfWork();
 
         $this->processEntities($unitOfWork->getScheduledEntityInsertions(), $entityManager, $unitOfWork);
@@ -53,6 +53,9 @@ final class DefaultUsernameORMListener
                 continue;
             }
 
+            if (!method_exists($user, 'getUsername')) {
+                continue;
+            }
             if ($customer->getEmail() === $user->getUsername() && $customer->getEmailCanonical() === $user->getUsernameCanonical()) {
                 continue;
             }
