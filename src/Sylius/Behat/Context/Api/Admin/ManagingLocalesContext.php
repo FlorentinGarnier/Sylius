@@ -16,20 +16,15 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Webmozart\Assert\Assert;
 
 final class ManagingLocalesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
     }
 
     /**
@@ -37,11 +32,12 @@ final class ManagingLocalesContext implements Context
      */
     public function iWantToAddNewLocale(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::LOCALES);
     }
 
     /**
      * @When I choose :localeCode
+     * @When I set code to :code
      * @When I do not choose a code
      */
     public function iChoose(string $localeCode = ''): void
@@ -64,7 +60,7 @@ final class ManagingLocalesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Locale could not be created'
+            'Locale could not be created',
         );
     }
 
@@ -73,10 +69,10 @@ final class ManagingLocalesContext implements Context
      */
     public function theStoreShouldBeAvailableInTheLanguage(string $localeCode): void
     {
-        $response = $this->client->index();
+        $response = $this->client->index(Resources::LOCALES);
         Assert::true(
             $this->responseChecker->hasItemWithValue($response, 'code', $localeCode),
-            sprintf('There is no locale with code "%s"', $localeCode)
+            sprintf('There is no locale with code "%s"', $localeCode),
         );
     }
 
@@ -89,7 +85,7 @@ final class ManagingLocalesContext implements Context
         $response = $this->client->create();
         Assert::false(
             $this->responseChecker->isCreationSuccessful($response),
-            'Locale has been created successfully, but it should not'
+            'Locale has been created successfully, but it should not',
         );
         Assert::same($this->responseChecker->getError($response), 'code: Locale code must be unique.');
     }
@@ -102,8 +98,21 @@ final class ManagingLocalesContext implements Context
         $response = $this->client->getLastResponse();
         Assert::false(
             $this->responseChecker->isCreationSuccessful($response),
-            'Locale has been created successfully, but it should not'
+            'Locale has been created successfully, but it should not',
         );
         Assert::same($this->responseChecker->getError($response), 'code: Please choose locale code.');
+    }
+
+    /**
+     * @Then I should be notified that the code is invalid
+     */
+    public function iShouldBeNotifiedThatTheCodeIsInvalid(): void
+    {
+        $response = $this->client->getLastResponse();
+        Assert::false(
+            $this->responseChecker->isCreationSuccessful($response),
+            'Locale has been created successfully, but it should not',
+        );
+        Assert::same($this->responseChecker->getError($response), 'code: This value is not a valid locale code.');
     }
 }

@@ -26,7 +26,7 @@ final class SendShipmentConfirmationEmailHandler implements MessageHandlerInterf
 {
     public function __construct(
         private SenderInterface $emailSender,
-        private ShipmentRepositoryInterface $shipmentRepository
+        private ShipmentRepositoryInterface $shipmentRepository,
     ) {
     }
 
@@ -34,18 +34,21 @@ final class SendShipmentConfirmationEmailHandler implements MessageHandlerInterf
     {
         /** @var ShipmentInterface $shipment */
         $shipment = $this->shipmentRepository->find($sendShipmentConfirmationEmail->shipmentId);
+        $order = $shipment->getOrder();
+        Assert::notNull($order);
 
-        Assert::notNull($order = $shipment->getOrder());
+        $email = $order->getCustomer()->getEmail();
+        Assert::notNull($email);
 
         $this->emailSender->send(
             Emails::SHIPMENT_CONFIRMATION,
-            [$order->getCustomer()->getEmail()],
+            [$email],
             [
                 'shipment' => $shipment,
                 'order' => $order,
                 'channel' => $order->getChannel(),
                 'localeCode' => $order->getLocaleCode(),
-            ]
+            ],
         );
     }
 }

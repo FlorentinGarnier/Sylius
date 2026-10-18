@@ -35,7 +35,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         ShipmentRepositoryInterface $shipmentRepository,
         ServiceRegistryInterface $shippingCalculators,
         RequestStack $requestStack,
-        ChannelContextInterface $channelContext
+        ChannelContextInterface $channelContext,
     ): void {
         $this->beConstructedWith($orderRepository, $shipmentRepository, $shippingCalculators, $requestStack, $channelContext);
     }
@@ -45,7 +45,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         $this
             ->supportsNormalization($shippingMethod, null, [
                 'collection_operation_name' => 'shop_get',
-                'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
             ])
             ->shouldReturn(true)
         ;
@@ -53,7 +53,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         $this
             ->supportsNormalization($shippingMethod, null, [
                 'collection_operation_name' => 'admin_get',
-                'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
             ])
             ->shouldReturn(false)
         ;
@@ -61,7 +61,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         $this
             ->supportsNormalization($channel, null, [
                 'collection_operation_name' => 'shop_get',
-                'filters' => ['tokenValue' => '666', 'shipmentId' => '999']
+                'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
             ])
             ->shouldReturn(false)
         ;
@@ -106,7 +106,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         ChannelContextInterface $channelContext,
         ChannelInterface $channel,
         RequestStack $requestStack,
-        Request $request
+        Request $request,
     ): void {
         $requestStack->getCurrentRequest()->willReturn($request);
         $channelContext->getChannel()->willReturn($channel);
@@ -154,7 +154,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         ChannelContextInterface $channelContext,
         RequestStack $requestStack,
         Request $request,
-        OrderRepositoryInterface $orderRepository
+        OrderRepositoryInterface $orderRepository,
     ): void {
         $requestStack->getCurrentRequest()->willReturn($request);
         $channelContext->getChannel()->willReturn($channel);
@@ -172,7 +172,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         $normalizer
             ->normalize($shippingMethod, null, [
                 'sylius_shipping_method_normalizer_already_called' => true,
-                'filters' => ['tokenValue'=> '666', 'shipmentId' => '999'],
+                'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
             ])
             ->willReturn([])
         ;
@@ -185,7 +185,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
 
         $this
             ->normalize($shippingMethod, null, [
-                'filters' => ['tokenValue'=> '666', 'shipmentId' => '999'],
+                'filters' => ['tokenValue' => '666', 'shipmentId' => '999'],
             ])
             ->shouldReturn(['price' => 1000])
         ;
@@ -201,7 +201,7 @@ final class ShippingMethodNormalizerSpec extends ObjectBehavior
         ChannelContextInterface $channelContext,
         RequestStack $requestStack,
         Request $request,
-        OrderRepositoryInterface $orderRepository
+        OrderRepositoryInterface $orderRepository,
     ): void {
         $requestStack->getCurrentRequest()->willReturn($request);
         $channelContext->getChannel()->willReturn($channel);

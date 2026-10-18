@@ -40,7 +40,7 @@ final class ShippingMethodNormalizer implements ContextAwareNormalizerInterface,
         private ShipmentRepositoryInterface $shipmentRepository,
         private ServiceRegistryInterface $shippingCalculators,
         private RequestStack $requestStack,
-        private ChannelContextInterface $channelContext
+        private ChannelContextInterface $channelContext,
     ) {
     }
 
@@ -55,7 +55,9 @@ final class ShippingMethodNormalizer implements ContextAwareNormalizerInterface,
 
         $filters = $request->attributes->get('_api_filters');
         if (null === $filters) {
+            /** @psalm-suppress InternalMethod **/
             $queryString = RequestParser::getQueryString($request);
+            /** @psalm-suppress InternalMethod **/
             $filters = $queryString ? RequestParser::parseRequestParams($queryString) : null;
         }
 
@@ -66,7 +68,7 @@ final class ShippingMethodNormalizer implements ContextAwareNormalizerInterface,
         }
 
         if (!isset($filters['tokenValue']) || !isset($filters['shipmentId'])) {
-            return;
+            return null;
         }
 
         /** @var ChannelInterface $channel */

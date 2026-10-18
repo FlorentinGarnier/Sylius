@@ -19,67 +19,44 @@ use Doctrine\Common\Comparable;
 use Sylius\Component\Product\Model\ProductVariant as BaseVariant;
 use Sylius\Component\Shipping\Model\ShippingCategoryInterface;
 use Sylius\Component\Taxation\Model\TaxCategoryInterface;
+use Webmozart\Assert\Assert;
 
 class ProductVariant extends BaseVariant implements ProductVariantInterface, Comparable, \Stringable
 {
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $version = 1;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $onHold = 0;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $onHand = 0;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $tracked = false;
 
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     protected $weight;
 
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     protected $width;
 
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     protected $height;
 
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     protected $depth;
 
-    /**
-     * @var TaxCategoryInterface|null
-     */
+    /** @var TaxCategoryInterface|null */
     protected $taxCategory;
 
-    /**
-     * @var ShippingCategoryInterface|null
-     */
+    /** @var ShippingCategoryInterface|null */
     protected $shippingCategory;
 
-    /**
-     * @var Collection
-     */
+    /** @var Collection */
     protected $channelPricings;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $shippingRequired = true;
 
     /**
@@ -315,6 +292,7 @@ class ProductVariant extends BaseVariant implements ProductVariantInterface, Com
      */
     public function getImages(): Collection
     {
+        /** @phpstan-ignore-next-line */
         return $this->images;
     }
 
@@ -324,9 +302,13 @@ class ProductVariant extends BaseVariant implements ProductVariantInterface, Com
      */
     public function getImagesByType(string $type): Collection
     {
-        return $this->images->filter(function (ProductImageInterface $image) use ($type): bool {
+        /** @var Collection<array-key, ImageInterface> $imagesByType */
+        $imagesByType = $this->images->filter(function (ProductImageInterface $image) use ($type): bool {
             return $type === $image->getType();
         });
+        Assert::allIsInstanceOf($imagesByType, ImageInterface::class);
+
+        return $imagesByType;
     }
 
     public function hasImages(): bool

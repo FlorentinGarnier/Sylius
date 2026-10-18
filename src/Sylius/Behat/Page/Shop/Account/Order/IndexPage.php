@@ -21,17 +21,13 @@ use Symfony\Component\Routing\RouterInterface;
 
 class IndexPage extends SymfonyPage implements IndexPageInterface
 {
-    private TableAccessorInterface $tableAccessor;
-
     public function __construct(
         Session $session,
         $minkParameters,
         RouterInterface $router,
-        TableAccessorInterface $tableAccessor
+        private TableAccessorInterface $tableAccessor,
     ) {
         parent::__construct($session, $minkParameters, $router);
-
-        $this->tableAccessor = $tableAccessor;
     }
 
     public function getRouteName(): string
@@ -48,7 +44,7 @@ class IndexPage extends SymfonyPage implements IndexPageInterface
     {
         $row = $this->tableAccessor->getRowWithFields(
             $this->getElement('customer_orders'),
-            ['number' => $order->getNumber()]
+            ['number' => $order->getNumber()],
         );
 
         $link = $row->find('css', '[data-test-button="sylius.ui.pay"]');
@@ -60,11 +56,11 @@ class IndexPage extends SymfonyPage implements IndexPageInterface
         try {
             $rows = $this->tableAccessor->getRowsWithFields(
                 $this->getElement('customer_orders'),
-                ['number' => $number]
+                ['number' => $number],
             );
 
             return 1 === count($rows);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }

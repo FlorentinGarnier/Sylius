@@ -26,7 +26,7 @@ final class UriBasedSectionProviderSpec extends ObjectBehavior
     function let(
         RequestStack $requestStack,
         UriBasedSectionResolverInterface $firstSectionResolver,
-        UriBasedSectionResolverInterface $secondSectionResolver
+        UriBasedSectionResolverInterface $secondSectionResolver,
     ): void {
         $this->beConstructedWith($requestStack, [$firstSectionResolver, $secondSectionResolver]);
     }
@@ -40,9 +40,9 @@ final class UriBasedSectionProviderSpec extends ObjectBehavior
         RequestStack $requestStack,
         Request $request,
         UriBasedSectionResolverInterface $firstSectionResolver,
-        SectionInterface $section
+        SectionInterface $section,
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->getPathInfo()->willReturn('/something');
 
@@ -56,9 +56,9 @@ final class UriBasedSectionProviderSpec extends ObjectBehavior
         Request $request,
         UriBasedSectionResolverInterface $firstSectionResolver,
         UriBasedSectionResolverInterface $secondSectionResolver,
-        SectionInterface $section
+        SectionInterface $section,
     ): void {
-        $requestStack->getMasterRequest()->willReturn($request);
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->getPathInfo()->willReturn('/something');
 
@@ -70,7 +70,7 @@ final class UriBasedSectionProviderSpec extends ObjectBehavior
 
     function it_return_null_if_master_request_has_not_been_resolved(RequestStack $requestStack): void
     {
-        $requestStack->getMasterRequest()->willReturn(null);
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this->getSection()->shouldReturn(null);
     }

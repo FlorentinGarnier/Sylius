@@ -16,19 +16,16 @@ namespace Sylius\Behat\Service\Helper;
 use Behat\Mink\Exception\ElementNotFoundException;
 use FriendsOfBehat\PageObjectExtension\Page\PageInterface;
 use FriendsOfBehat\PageObjectExtension\Page\UnexpectedPageException;
+use Sylius\Behat\Exception\NotificationExpectationMismatchException;
 use Sylius\Behat\NotificationType;
 use Sylius\Behat\Service\NotificationCheckerInterface;
 
 final class JavaScriptTestHelper implements JavaScriptTestHelperInterface
 {
-    private int $microsecondsInterval;
-
-    private int $defaultTimeout;
-
-    public function __construct(int $microsecondsInterval, int $defaultTimeout)
-    {
-        $this->microsecondsInterval = $microsecondsInterval;
-        $this->defaultTimeout = $defaultTimeout;
+    public function __construct(
+        private int $microsecondsInterval,
+        private int $defaultTimeout,
+    ) {
     }
 
     public function waitUntilAssertionPasses(callable $callable, ?int $timeout = null): void
@@ -40,13 +37,18 @@ final class JavaScriptTestHelper implements JavaScriptTestHelperInterface
         NotificationCheckerInterface $notificationChecker,
         NotificationType $type,
         string $message,
-        ?int $timeout = null
+        ?int $timeout = null,
     ): void {
         $callable = function () use ($notificationChecker, $message, $type): void {
             $notificationChecker->checkNotification($message, $type);
         };
 
-        $this->waitUntilExceptionDisappears($callable, ElementNotFoundException::class, $timeout);
+        $this->waitUntilExceptionDisappears(
+            $callable,
+            ElementNotFoundException::class,
+            $timeout,
+            $type,
+        );
     }
 
     public function waitUntilPageOpens(PageInterface $page, ?array $options = [], ?int $timeout = null): void
@@ -58,15 +60,21 @@ final class JavaScriptTestHelper implements JavaScriptTestHelperInterface
         $this->waitUntilExceptionDisappears($callable, UnexpectedPageException::class, $timeout);
     }
 
-    private function waitUntilExceptionDisappears(callable $callable, string $exceptionClass, ?int $timeout = null): void
-    {
+    private function waitUntilExceptionDisappears(
+        callable $callable,
+        string $exceptionClass,
+        ?int $timeout = null,
+        NotificationType $type = null,
+    ): void {
         $start = microtime(true);
-        $timeout = $timeout ?? $this->defaultTimeout;
+        $timeout ??= $this->defaultTimeout;
         $end = $start + $timeout;
 
         do {
             try {
                 $callable();
+            } catch (NotificationExpectationMismatchException $exception) {
+                throw new NotificationExpectationMismatchException($type, $exception->getMessage());
             } catch (\Exception $exception) {
                 if ($exception instanceof $exceptionClass) {
                     usleep($this->microsecondsInterval);

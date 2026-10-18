@@ -34,7 +34,7 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
     function let(
         ZoneProviderInterface $defaultTaxZoneProvider,
         ZoneMatcherInterface $zoneMatcher,
-        PrioritizedServiceRegistryInterface $strategyRegistry
+        PrioritizedServiceRegistryInterface $strategyRegistry,
     ): void {
         $this->beConstructedWith($defaultTaxZoneProvider, $zoneMatcher, $strategyRegistry);
     }
@@ -53,9 +53,9 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
         AddressInterface $address,
         ZoneInterface $zone,
         TaxCalculationStrategyInterface $strategyOne,
-        TaxCalculationStrategyInterface $strategyTwo
+        TaxCalculationStrategyInterface $strategyTwo,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
         $order->getItems()->willReturn(new ArrayCollection([$orderItem->getWrappedObject()]));
         $order->getShipments()->willReturn(new ArrayCollection([$shipment->getWrappedObject()]));
         $order->isEmpty()->willReturn(false);
@@ -84,9 +84,9 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
         OrderItemInterface $orderItem,
         AddressInterface $address,
         ZoneInterface $zone,
-        TaxCalculationStrategyInterface $strategy
+        TaxCalculationStrategyInterface $strategy,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
         $order->getItems()->willReturn(new ArrayCollection([$orderItem->getWrappedObject()]));
         $order->getShipments()->willReturn(new ArrayCollection([]));
         $order->isEmpty()->willReturn(false);
@@ -107,7 +107,7 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
 
     function it_does_not_process_taxes_if_there_is_no_order_item(OrderInterface $order): void
     {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
         $order->removeAdjustments(AdjustmentInterface::TAX_ADJUSTMENT)->shouldBeCalled();
         $order->getItems()->willReturn(new ArrayCollection([]));
         $order->getShipments()->willReturn(new ArrayCollection([]));
@@ -124,9 +124,9 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
         PrioritizedServiceRegistryInterface $strategyRegistry,
         OrderInterface $order,
         OrderItemInterface $orderItem,
-        AddressInterface $address
+        AddressInterface $address,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
         $order->getItems()->willReturn(new ArrayCollection([$orderItem->getWrappedObject()]));
         $order->getShipments()->willReturn(new ArrayCollection([]));
         $order->isEmpty()->willReturn(false);
@@ -145,12 +145,12 @@ final class OrderTaxesProcessorSpec extends ObjectBehavior
         $this->process($order);
     }
 
-    function it_does_nothing_if_the_order_is_in_a_state_different_than_cart(
+    function it_does_nothing_if_the_order_cannot_be_processed(
         ZoneProviderInterface $defaultTaxZoneProvider,
         PrioritizedServiceRegistryInterface $strategyRegistry,
-        OrderInterface $order
+        OrderInterface $order,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_NEW);
+        $order->canBeProcessed()->willReturn(false);
 
         $order->getItems()->shouldNotBeCalled();
         $order->getShipments()->shouldNotBeCalled();

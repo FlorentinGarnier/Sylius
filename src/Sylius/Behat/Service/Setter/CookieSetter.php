@@ -21,23 +21,10 @@ use Symfony\Component\BrowserKit\Cookie;
 
 final class CookieSetter implements CookieSetterInterface
 {
-    private Session $minkSession;
-
-    /** @var array */
-    private $minkParameters;
-
-    public function __construct(Session $minkSession, $minkParameters)
-    {
-        if (!is_array($minkParameters) && !$minkParameters instanceof \ArrayAccess) {
-            throw new \InvalidArgumentException(sprintf(
-                '"$minkParameters" passed to "%s" has to be an array or implement "%s".',
-                self::class,
-                \ArrayAccess::class
-            ));
-        }
-
-        $this->minkSession = $minkSession;
-        $this->minkParameters = $minkParameters;
+    public function __construct(
+        private Session $minkSession,
+        private \ArrayAccess $minkParameters,
+    ) {
     }
 
     public function setCookie($name, $value)
@@ -54,7 +41,7 @@ final class CookieSetter implements CookieSetterInterface
 
         if ($driver instanceof SymfonyDriver) {
             $driver->getClient()->getCookieJar()->set(
-                new Cookie($name, $value, null, null, parse_url($this->minkParameters['base_url'], \PHP_URL_HOST))
+                new Cookie($name, $value, null, null, parse_url($this->minkParameters['base_url'], \PHP_URL_HOST)),
             );
 
             return;
@@ -86,7 +73,7 @@ final class CookieSetter implements CookieSetterInterface
             return true;
         }
 
-        if (false !== strpos($session->getCurrentUrl(), $this->minkParameters['base_url'])) {
+        if (str_contains($session->getCurrentUrl(), $this->minkParameters['base_url'])) {
             return false;
         }
 

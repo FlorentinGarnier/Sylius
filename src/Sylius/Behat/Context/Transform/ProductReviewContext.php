@@ -20,11 +20,8 @@ use Webmozart\Assert\Assert;
 
 final class ProductReviewContext implements Context
 {
-    private RepositoryInterface $productReviewRepository;
-
-    public function __construct(RepositoryInterface $productReviewRepository)
+    public function __construct(private RepositoryInterface $productReviewRepository)
     {
-        $this->productReviewRepository = $productReviewRepository;
     }
 
     /**
@@ -37,7 +34,7 @@ final class ProductReviewContext implements Context
 
         Assert::notNull(
             $productReview,
-            sprintf('Product review with title "%s" does not exist', $title)
+            sprintf('Product review with title "%s" does not exist', $title),
         );
 
         return $productReview;

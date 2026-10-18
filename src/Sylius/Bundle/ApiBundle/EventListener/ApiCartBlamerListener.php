@@ -22,30 +22,30 @@ use Sylius\Component\Order\Context\CartContextInterface;
 use Sylius\Component\Order\Context\CartNotFoundException;
 use Sylius\Component\Resource\Exception\UnexpectedTypeException;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
+use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 
 final class ApiCartBlamerListener
 {
     public function __construct(
         private CartContextInterface $cartContext,
         private SectionProviderInterface $uriBasedSectionContext,
-        private MessageBusInterface $commandBus
+        private MessageBusInterface $commandBus,
     ) {
     }
 
-    public function onInteractiveLogin(InteractiveLoginEvent $interactiveLoginEvent): void
+    public function onLoginSuccess(LoginSuccessEvent $loginSuccessEvent): void
     {
         if (!$this->uriBasedSectionContext->getSection() instanceof ShopApiOrdersSubSection) {
             return;
         }
 
-        $user = $interactiveLoginEvent->getAuthenticationToken()->getUser();
+        $user = $loginSuccessEvent->getAuthenticatedToken()->getUser();
         if (!$user instanceof ShopUserInterface) {
             return;
         }
 
         $cart = $this->getCart();
-        if (null === $cart || null !== $cart->getCustomer()) {
+        if (null === $cart || !$cart->isCreatedByGuest()) {
             return;
         }
 

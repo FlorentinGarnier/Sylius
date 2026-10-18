@@ -25,32 +25,14 @@ use Webmozart\Assert\Assert;
 
 final class ChannelContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private ChannelContextSetterInterface $channelContextSetter;
-
-    private ChannelRepositoryInterface $channelRepository;
-
-    private CreatePageInterface $channelCreatePage;
-
-    private HomePageInterface $homePage;
-
-    private MainPageInterface $pluginMainPage;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        ChannelContextSetterInterface $channelContextSetter,
-        ChannelRepositoryInterface $channelRepository,
-        CreatePageInterface $channelCreatePage,
-        HomePageInterface $homePage,
-        MainPageInterface $pluginMainPage
+        private SharedStorageInterface $sharedStorage,
+        private ChannelContextSetterInterface $channelContextSetter,
+        private ChannelRepositoryInterface $channelRepository,
+        private CreatePageInterface $channelCreatePage,
+        private HomePageInterface $homePage,
+        private MainPageInterface $pluginMainPage,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->channelContextSetter = $channelContextSetter;
-        $this->channelRepository = $channelRepository;
-        $this->channelCreatePage = $channelCreatePage;
-        $this->homePage = $homePage;
-        $this->pluginMainPage = $pluginMainPage;
     }
 
     /**
@@ -75,10 +57,14 @@ final class ChannelContext implements Context
      */
     public function iVisitChannelHomepage(ChannelInterface $channel): void
     {
+        $this->sharedStorage->set('hostname', $channel->getHostname());
+
         $this->channelContextSetter->setChannel($channel);
 
         $defaultLocale = $channel->getDefaultLocale();
         $this->homePage->open(['_locale' => $defaultLocale->getCode()]);
+
+        $this->sharedStorage->set('current_locale_code', $defaultLocale->getCode());
     }
 
     /**

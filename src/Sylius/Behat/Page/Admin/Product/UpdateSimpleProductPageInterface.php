@@ -37,6 +37,8 @@ interface UpdateSimpleProductPageInterface extends BaseUpdatePageInterface
 
     public function getAttributeValue(string $attributeName, string $localeCode): string;
 
+    public function getAttributeSelectText(string $attributeName, string $localeCode): string;
+
     public function getAttributeValidationErrors(string $attributeName, string $localeCode): string;
 
     public function getNumberOfAttributes(): int;
@@ -46,6 +48,8 @@ interface UpdateSimpleProductPageInterface extends BaseUpdatePageInterface
     public function hasNonTranslatableAttributeWithValue(string $attributeName, string $value): bool;
 
     public function isMainTaxonChosen(string $taxonName): bool;
+
+    public function isTaxonChosen(string $taxonName): bool;
 
     public function selectMainTaxon(TaxonInterface $taxon): void;
 
@@ -63,9 +67,6 @@ interface UpdateSimpleProductPageInterface extends BaseUpdatePageInterface
 
     public function isImageWithTypeDisplayed(string $type): bool;
 
-    /**
-     * @param string $type
-     */
     public function attachImage(string $path, string $type = null): void;
 
     public function changeImageWithType(string $type, string $path): void;

@@ -27,6 +27,7 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
     function let(ExecutionContextInterface $context, ProductVariantsParityCheckerInterface $variantsParityChecker): void
     {
         $this->beConstructedWith($variantsParityChecker);
+
         $this->initialize($context);
     }
 
@@ -35,11 +36,33 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
         $this->shouldImplement(ConstraintValidator::class);
     }
 
+    function it_does_not_add_violation_if_product_is_null(
+        ExecutionContextInterface $context,
+        ProductInterface $product,
+        ProductVariantInterface $variant,
+        ProductVariantsParityCheckerInterface $variantsParityChecker,
+    ): void {
+        $constraint = new ProductVariantCombination([
+            'message' => 'Variant with given options already exists',
+        ]);
+
+        $variant->getProduct()->willReturn(null);
+
+        $product->hasVariants()->shouldNotBeCalled();
+        $product->hasOptions()->shouldNotBeCalled();
+
+        $variantsParityChecker->checkParity($variant, $product)->shouldNotBeCalled();
+
+        $context->addViolation(Argument::any())->shouldNotBeCalled();
+
+        $this->validate($variant, $constraint);
+    }
+
     function it_does_not_add_violation_if_product_does_not_have_options(
         ExecutionContextInterface $context,
         ProductInterface $product,
         ProductVariantInterface $variant,
-        ProductVariantsParityCheckerInterface $variantsParityChecker
+        ProductVariantsParityCheckerInterface $variantsParityChecker,
     ): void {
         $constraint = new ProductVariantCombination([
             'message' => 'Variant with given options already exists',
@@ -50,7 +73,7 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
         $product->hasVariants()->willReturn(true);
         $product->hasOptions()->willReturn(false);
 
-        $variantsParityChecker->checkParity($variant, $product)->willReturn(false);
+        $variantsParityChecker->checkParity($variant, $product)->shouldNotBeCalled();
 
         $context->addViolation(Argument::any())->shouldNotBeCalled();
 
@@ -61,7 +84,7 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
         ExecutionContextInterface $context,
         ProductInterface $product,
         ProductVariantInterface $variant,
-        ProductVariantsParityCheckerInterface $variantsParityChecker
+        ProductVariantsParityCheckerInterface $variantsParityChecker,
     ): void {
         $constraint = new ProductVariantCombination([
             'message' => 'Variant with given options already exists',
@@ -74,7 +97,7 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
 
         $context->addViolation(Argument::any())->shouldNotBeCalled();
 
-        $variantsParityChecker->checkParity($variant, $product)->willReturn(false);
+        $variantsParityChecker->checkParity($variant, $product)->shouldNotBeCalled();
 
         $this->validate($variant, $constraint);
     }
@@ -83,7 +106,7 @@ final class ProductVariantCombinationValidatorSpec extends ObjectBehavior
         ExecutionContextInterface $context,
         ProductInterface $product,
         ProductVariantInterface $variant,
-        ProductVariantsParityCheckerInterface $variantsParityChecker
+        ProductVariantsParityCheckerInterface $variantsParityChecker,
     ): void {
         $constraint = new ProductVariantCombination([
             'message' => 'Variant with given options already exists',

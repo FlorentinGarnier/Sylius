@@ -23,24 +23,12 @@ use Webmozart\Assert\Assert;
 
 final class ManagingCustomerGroupsContext implements Context
 {
-    private CreatePageInterface $createPage;
-
-    private IndexPageInterface $indexPage;
-
-    private CurrentPageResolverInterface $currentPageResolver;
-
-    private UpdatePageInterface $updatePage;
-
     public function __construct(
-        CreatePageInterface $createPage,
-        IndexPageInterface $indexPage,
-        CurrentPageResolverInterface $currentPageResolver,
-        UpdatePageInterface $updatePage
+        private CreatePageInterface $createPage,
+        private IndexPageInterface $indexPage,
+        private CurrentPageResolverInterface $currentPageResolver,
+        private UpdatePageInterface $updatePage,
     ) {
-        $this->createPage = $createPage;
-        $this->indexPage = $indexPage;
-        $this->currentPageResolver = $currentPageResolver;
-        $this->updatePage = $updatePage;
     }
 
     /**
@@ -169,7 +157,7 @@ final class ManagingCustomerGroupsContext implements Context
     {
         Assert::same(
             $this->updatePage->getValidationMessage('name'),
-            'Please enter a customer group name.'
+            'Please enter a customer group name.',
         );
     }
 
@@ -219,8 +207,8 @@ final class ManagingCustomerGroupsContext implements Context
             $this->indexPage->isSingleResourceOnPage(['name' => $customerGroup->getName()]),
             sprintf(
                 'Customer group %s should no longer exist in the registry',
-                $customerGroup->getName()
-            )
+                $customerGroup->getName(),
+            ),
         );
     }
 }

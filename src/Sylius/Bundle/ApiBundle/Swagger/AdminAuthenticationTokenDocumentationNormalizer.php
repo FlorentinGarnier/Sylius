@@ -21,7 +21,7 @@ final class AdminAuthenticationTokenDocumentationNormalizer implements Normalize
 {
     public function __construct(
         private NormalizerInterface $decoratedNormalizer,
-        private string $apiRoute
+        private string $apiRoute,
     ) {
     }
 
@@ -38,6 +38,10 @@ final class AdminAuthenticationTokenDocumentationNormalizer implements Normalize
             'type' => 'object',
             'properties' => [
                 'token' => [
+                    'type' => 'string',
+                    'readOnly' => true,
+                ],
+                'adminUser' => [
                     'type' => 'string',
                     'readOnly' => true,
                 ],

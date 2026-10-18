@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Shop\Checkout;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Session;
-use DMore\ChromeDriver\ChromeDriver;
 use FriendsOfBehat\PageObjectExtension\Page\SymfonyPage;
 use Sylius\Behat\Service\Accessor\TableAccessorInterface;
+use Sylius\Behat\Service\DriverHelper;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ShippingMethodInterface;
@@ -27,17 +26,13 @@ use Symfony\Component\Routing\RouterInterface;
 
 class CompletePage extends SymfonyPage implements CompletePageInterface
 {
-    private TableAccessorInterface $tableAccessor;
-
     public function __construct(
         Session $session,
         $minkParameters,
         RouterInterface $router,
-        TableAccessorInterface $tableAccessor
+        private TableAccessorInterface $tableAccessor,
     ) {
         parent::__construct($session, $minkParameters, $router);
-
-        $this->tableAccessor = $tableAccessor;
     }
 
     public function getRouteName(): string
@@ -51,7 +46,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
 
         try {
             $this->tableAccessor->getRowWithFields($table, ['item' => $productName, 'qty' => $quantity]);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
 
@@ -78,7 +73,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
             return false;
         }
 
-        return false !== strpos($this->getElement('shipping_method')->getText(), $shippingMethod->getName());
+        return str_contains($this->getElement('shipping_method')->getText(), $shippingMethod->getName());
     }
 
     public function getPaymentMethodName(): string
@@ -126,7 +121,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
 
     public function hasPromotionTotal(string $promotionTotal): bool
     {
-        return false !== strpos($this->getElement('promotion_total')->getText(), $promotionTotal);
+        return str_contains($this->getElement('promotion_total')->getText(), $promotionTotal);
     }
 
     public function hasPromotion(string $promotionName): bool
@@ -139,7 +134,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
         /** @var NodeElement $shippingPromotions */
         $shippingPromotions = $this->getElement('promotions_shipping_details');
 
-        return false !== strpos($shippingPromotions->getAttribute('data-html'), $promotionName);
+        return str_contains($shippingPromotions->getAttribute('data-html'), $promotionName);
     }
 
     public function getTaxTotal(): string
@@ -176,12 +171,12 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
 
     public function hasLocale(string $localeName): bool
     {
-        return false !== strpos($this->getElement('locale')->getText(), $localeName);
+        return str_contains($this->getElement('locale')->getText(), $localeName);
     }
 
     public function hasCurrency(string $currencyCode): bool
     {
-        return false !== strpos($this->getElement('currency')->getText(), $currencyCode);
+        return str_contains($this->getElement('currency')->getText(), $currencyCode);
     }
 
     public function confirmOrder(): void
@@ -225,7 +220,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
         /** @var NodeElement $shippingPromotions */
         $shippingPromotions = $this->getElement('promotions_shipping_details');
 
-        return false !== strpos($shippingPromotions->getAttribute('data-html'), $promotionWithDiscount);
+        return str_contains($shippingPromotions->getAttribute('data-html'), $promotionWithDiscount);
     }
 
     public function hasOrderPromotion(string $promotionName): bool
@@ -233,12 +228,12 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
         /** @var NodeElement $shippingPromotions */
         $shippingPromotions = $this->getElement('order_promotions_details');
 
-        return false !== strpos($shippingPromotions->getAttribute('data-html'), $promotionName);
+        return str_contains($shippingPromotions->getAttribute('data-html'), $promotionName);
     }
 
     public function tryToOpen(array $urlParameters = []): void
     {
-        if ($this->getDriver() instanceof Selenium2Driver || $this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isJavascript($this->getDriver())) {
             $start = microtime(true);
             $end = $start + 15;
             do {
@@ -304,7 +299,7 @@ class CompletePage extends SymfonyPage implements CompletePageInterface
             return true;
         }
 
-        return false !== strpos($address, $addressPart);
+        return str_contains($address, $addressPart);
     }
 
     private function getCountryName(string $countryCode): string

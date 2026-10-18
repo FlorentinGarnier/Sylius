@@ -50,9 +50,9 @@ Feature: Editing catalog promotion
 
     @api @ui @javascript
     Scenario: Editing catalog promotion variant scope
-        When I edit "Christmas sale" catalog promotion to be applied on "Kotlin T-shirt" variant
+        When I edit "Christmas sale" catalog promotion to be applied on "Kotlin T-Shirt" variant
         Then I should be notified that it has been successfully edited
-        And this catalog promotion should be applied on "Kotlin T-shirt" variant
+        And this catalog promotion should be applied on "Kotlin T-Shirt" variant
         And this catalog promotion should not be applied on "PHP T-Shirt" variant
 
     @api @ui @javascript
@@ -60,7 +60,7 @@ Feature: Editing catalog promotion
         When I edit "Christmas sale" catalog promotion to be applied on "Clothes" taxon
         Then I should be notified that it has been successfully edited
         And this catalog promotion should be applied on "Clothes" taxon
-        And this catalog promotion should not be applied on "Kotlin T-shirt" variant
+        And this catalog promotion should not be applied on "Kotlin T-Shirt" variant
         And this catalog promotion should not be applied on "PHP T-Shirt" variant
 
     @api @ui @javascript
@@ -81,6 +81,13 @@ Feature: Editing catalog promotion
         When I edit "Christmas sale" catalog promotion to have "$10.00" of fixed discount in the "United States" channel
         Then I should be notified that it has been successfully edited
         And this catalog promotion should have "$10.00" of fixed discount in the "United States" channel
+
+    @api @ui
+    Scenario: Being unable to edit catalog promotion if it is currently being processed
+        Given the catalog promotion "Christmas sale" is currently being processed
+        When I try to rename the "Christmas sale" catalog promotion to "Black Friday"
+        Then I should not be able to edit it due to wrong state
+        And this catalog promotion name should still be "Christmas sale"
 
     @api @ui
     Scenario: Being unable to change end date to earlier then start date

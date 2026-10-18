@@ -21,6 +21,7 @@ interface SummaryPageInterface extends PageInterface
     public function getGrandTotal(): string;
 
     public function getBaseGrandTotal(): string;
+
     public function getIncludedTaxTotal(): string;
 
     public function getExcludedTaxTotal(): string;
@@ -51,6 +52,8 @@ interface SummaryPageInterface extends PageInterface
 
     public function changeQuantity(string $productName, string $quantity): void;
 
+    public function specifyQuantity(string $productName, int $quantity): void;
+
     public function applyCoupon(string $couponCode): void;
 
     public function isSingleItemOnPage(): bool;
@@ -63,6 +66,8 @@ interface SummaryPageInterface extends PageInterface
 
     public function hasItemWithOptionValue(string $productName, string $optionName, string $optionValue): bool;
 
+    public function hasItemWithInsufficientStock(string $productName): bool;
+
     public function hasProductOutOfStockValidationMessage(ProductInterface $product): bool;
 
     public function isEmpty(): bool;
@@ -74,6 +79,8 @@ interface SummaryPageInterface extends PageInterface
     public function clearCart(): void;
 
     public function updateCart(): void;
+
+    public function checkout(): void;
 
     public function waitForRedirect(int $timeout): void;
 

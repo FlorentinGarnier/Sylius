@@ -16,6 +16,7 @@ namespace spec\Sylius\Component\Core\Model;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use PhpSpec\ObjectBehavior;
+use Prophecy\Argument;
 use Sylius\Component\Core\Model\AddressInterface;
 use Sylius\Component\Core\Model\AdjustmentInterface;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
@@ -31,6 +32,7 @@ use Sylius\Component\Core\OrderShippingStates;
 use Sylius\Component\Order\Model\Order as BaseOrder;
 use Sylius\Component\Order\Model\OrderInterface;
 use Sylius\Component\Promotion\Model\PromotionCouponInterface;
+use Sylius\Component\Shipping\Model\ShipmentUnitInterface;
 
 final class OrderSpec extends ObjectBehavior
 {
@@ -49,10 +51,28 @@ final class OrderSpec extends ObjectBehavior
         $this->getCustomer()->shouldReturn(null);
     }
 
-    function its_allows_defining_customer(CustomerInterface $customer): void
+    function it_allows_defining_customer(CustomerInterface $customer): void
     {
         $this->setCustomer($customer);
         $this->getCustomer()->shouldReturn($customer);
+    }
+
+    function it_allows_defining_authorized_customer(CustomerInterface $customer): void
+    {
+        $this->setCustomerWithAuthorization($customer);
+        $this->getCustomer()->shouldReturn($customer);
+        $this->isCreatedByGuest()->shouldReturn(false);
+    }
+
+    function its_created_by_guest_customer_by_default(): void
+    {
+        $this->isCreatedByGuest()->shouldReturn(true);
+    }
+
+    function it_allows_to_mutate_create_by_guest_field(): void
+    {
+        $this->setCreatedByGuest(false);
+        $this->isCreatedByGuest()->shouldReturn(false);
     }
 
     function its_customer_can_be_nullable(): void
@@ -134,19 +154,37 @@ final class OrderSpec extends ObjectBehavior
         $this->shouldNotHaveShipment($shipment);
     }
 
-    function it_removes_shipments(ShipmentInterface $shipment): void
-    {
+    function it_removes_shipments_with_units(
+        ShipmentInterface $shipment,
+        ShipmentUnitInterface $shipmentUnit,
+    ): void {
         $this->addShipment($shipment);
         $this->hasShipment($shipment)->shouldReturn(true);
+        $shipment->getUnits()->willReturn(new ArrayCollection([$shipmentUnit->getWrappedObject()]));
 
         $this->removeShipments();
 
+        $shipment->removeUnit(Argument::any())->shouldBeCalled();
+        $this->hasShipment($shipment)->shouldReturn(false);
+    }
+
+    function it_removes_shipments_without_units(
+        ShipmentInterface $shipment,
+        ShipmentUnitInterface $shipmentUnit,
+    ): void {
+        $this->addShipment($shipment);
+        $this->hasShipment($shipment)->shouldReturn(true);
+        $shipment->getUnits()->willReturn(new ArrayCollection([]));
+
+        $this->removeShipments();
+
+        $shipment->removeUnit()->shouldNotBeCalled();
         $this->hasShipment($shipment)->shouldReturn(false);
     }
 
     function it_returns_shipping_adjustments(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $taxAdjustment
+        AdjustmentInterface $taxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->setAdjustable($this)->shouldBeCalled();
@@ -168,7 +206,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_removes_shipping_adjustments(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $taxAdjustment
+        AdjustmentInterface $taxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->setAdjustable($this)->shouldBeCalled();
@@ -193,7 +231,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_returns_tax_adjustments(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $taxAdjustment
+        AdjustmentInterface $taxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->setAdjustable($this)->shouldBeCalled();
@@ -215,7 +253,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_removes_tax_adjustments(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $taxAdjustment
+        AdjustmentInterface $taxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->setAdjustable($this)->shouldBeCalled();
@@ -289,7 +327,7 @@ final class OrderSpec extends ObjectBehavior
         PaymentInterface $payment1,
         PaymentInterface $payment2,
         PaymentInterface $payment3,
-        PaymentInterface $payment4
+        PaymentInterface $payment4,
     ): void {
         $payment1->getState()->willReturn(PaymentInterface::STATE_CART);
         $payment1->setOrder($this)->shouldBeCalled();
@@ -320,7 +358,7 @@ final class OrderSpec extends ObjectBehavior
         PaymentInterface $payment1,
         PaymentInterface $payment2,
         PaymentInterface $payment3,
-        PaymentInterface $payment4
+        PaymentInterface $payment4,
     ): void {
         $payment1->getState()->willReturn(PaymentInterface::STATE_CART);
         $payment1->setOrder($this)->shouldBeCalled();
@@ -393,7 +431,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_returns_a_tax_of_all_items_as_tax_total_when_there_are_no_tax_adjustments(
         OrderItemInterface $orderItem1,
-        OrderItemInterface $orderItem2
+        OrderItemInterface $orderItem2,
     ): void {
         $orderItem1->getTotal()->willReturn(1100);
         $orderItem1->getTaxTotal()->willReturn(100);
@@ -412,7 +450,7 @@ final class OrderSpec extends ObjectBehavior
         OrderItemInterface $orderItem1,
         OrderItemInterface $orderItem2,
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $shippingTaxAdjustment
+        AdjustmentInterface $shippingTaxAdjustment,
     ): void {
         $orderItem1->getTotal()->willReturn(1100);
         $orderItem1->getTaxTotal()->willReturn(100);
@@ -444,7 +482,7 @@ final class OrderSpec extends ObjectBehavior
         OrderItemInterface $orderItem1,
         OrderItemInterface $orderItem2,
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $shippingTaxAdjustment
+        AdjustmentInterface $shippingTaxAdjustment,
     ): void {
         $orderItem1->getTotal()->willReturn(1100);
         $orderItem1->getTaxTotal()->willReturn(100);
@@ -474,7 +512,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_includes_a_non_neutral_tax_adjustments_in_shipping_total(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $shippingTaxAdjustment
+        AdjustmentInterface $shippingTaxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->isNeutral()->willReturn(false);
@@ -495,7 +533,7 @@ final class OrderSpec extends ObjectBehavior
     function it_returns_a_shipping_total_decreased_by_shipping_promotion(
         AdjustmentInterface $shippingAdjustment,
         AdjustmentInterface $shippingTaxAdjustment,
-        AdjustmentInterface $shippingPromotionAdjustment
+        AdjustmentInterface $shippingPromotionAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->isNeutral()->willReturn(false);
@@ -521,7 +559,7 @@ final class OrderSpec extends ObjectBehavior
 
     function it_does_not_include_neutral_tax_adjustments_in_shipping_total(
         AdjustmentInterface $shippingAdjustment,
-        AdjustmentInterface $neutralShippingTaxAdjustment
+        AdjustmentInterface $neutralShippingTaxAdjustment,
     ): void {
         $shippingAdjustment->getType()->willReturn(AdjustmentInterface::SHIPPING_ADJUSTMENT);
         $shippingAdjustment->isNeutral()->willReturn(false);
@@ -552,7 +590,7 @@ final class OrderSpec extends ObjectBehavior
         AdjustmentInterface $orderItemAdjustment1,
         AdjustmentInterface $orderItemAdjustment2,
         AdjustmentInterface $orderUnitAdjustment1,
-        AdjustmentInterface $orderUnitAdjustment2
+        AdjustmentInterface $orderUnitAdjustment2,
     ): void {
         $orderAdjustment1->getType()->willReturn(AdjustmentInterface::ORDER_PROMOTION_ADJUSTMENT);
         $orderAdjustment1->getAmount()->willReturn(-400);
@@ -616,7 +654,7 @@ final class OrderSpec extends ObjectBehavior
         AdjustmentInterface $orderAdjustment,
         AdjustmentInterface $orderItemAdjustment,
         AdjustmentInterface $orderUnitAdjustment,
-        OrderItemInterface $orderItem
+        OrderItemInterface $orderItem,
     ): void {
         $orderAdjustment->getType()->willReturn(AdjustmentInterface::ORDER_PROMOTION_ADJUSTMENT);
         $orderAdjustment->getAmount()->willReturn(-400);
@@ -664,7 +702,7 @@ final class OrderSpec extends ObjectBehavior
         AdjustmentInterface $orderItemAdjustmentForOrder,
         AdjustmentInterface $orderItemAdjustmentForItem,
         AdjustmentInterface $orderUnitAdjustmentForOrder,
-        AdjustmentInterface $orderUnitAdjustmentForItem
+        AdjustmentInterface $orderUnitAdjustmentForItem,
     ): void {
         $orderAdjustmentForOrder->getType()->willReturn(AdjustmentInterface::ORDER_PROMOTION_ADJUSTMENT);
         $orderAdjustmentForOrder->getAmount()->willReturn(-120);
@@ -734,7 +772,7 @@ final class OrderSpec extends ObjectBehavior
         ProductVariantInterface $variant1,
         ProductVariantInterface $variant2,
         ChannelInterface $channel,
-        CatalogPromotionInterface $catalogPromotion
+        CatalogPromotionInterface $catalogPromotion,
     ): void {
         $item1->getTotal()->willReturn(500);
         $item1->getVariant()->willReturn($variant1);
@@ -751,5 +789,58 @@ final class OrderSpec extends ObjectBehavior
         $this->setChannel($channel);
 
         $this->getNonDiscountedItemsTotal()->shouldReturn(500);
+    }
+
+    function it_returns_a_proper_total_of_taxes_included_in_price_or_excluded_from_it(
+        OrderItemInterface $firstOrderItem,
+        OrderItemInterface $secondOrderItem,
+        AdjustmentInterface $includedUnitTaxAdjustment,
+        AdjustmentInterface $excludedUnitTaxAdjustment,
+        AdjustmentInterface $shippingTaxAdjustment,
+    ): void {
+        $includedUnitTaxAdjustment->getType()->willReturn(AdjustmentInterface::TAX_ADJUSTMENT);
+        $includedUnitTaxAdjustment->isNeutral()->willReturn(true);
+        $includedUnitTaxAdjustment->getAmount()->willReturn(1000);
+
+        $excludedUnitTaxAdjustment->getType()->willReturn(AdjustmentInterface::TAX_ADJUSTMENT);
+        $excludedUnitTaxAdjustment->isNeutral()->willReturn(false);
+        $excludedUnitTaxAdjustment->getAmount()->willReturn(800);
+
+        $firstOrderItem->getTotal()->willReturn(5000);
+        $firstOrderItem
+            ->getAdjustmentsRecursively(AdjustmentInterface::TAX_ADJUSTMENT)
+            ->willReturn(new ArrayCollection([$includedUnitTaxAdjustment->getWrappedObject()]))
+        ;
+
+        $secondOrderItem->getTotal()->willReturn(5000);
+        $secondOrderItem
+            ->getAdjustmentsRecursively(AdjustmentInterface::TAX_ADJUSTMENT)
+            ->willReturn(new ArrayCollection([$excludedUnitTaxAdjustment->getWrappedObject()]))
+        ;
+
+        $firstOrderItem->setOrder($this)->shouldBeCalled();
+        $secondOrderItem->setOrder($this)->shouldBeCalled();
+        $this->addItem($firstOrderItem);
+        $this->addItem($secondOrderItem);
+
+        $shippingTaxAdjustment->getType()->willReturn(AdjustmentInterface::TAX_ADJUSTMENT);
+        $shippingTaxAdjustment->setAdjustable($this)->shouldBeCalled();
+        $shippingTaxAdjustment->isNeutral()->willReturn(true);
+        $shippingTaxAdjustment->getAmount()->willReturn(500);
+        $this->addAdjustment($shippingTaxAdjustment);
+
+        $this->getTaxIncludedTotal()->shouldReturn(1500);
+        $this->getTaxExcludedTotal()->shouldReturn(800);
+    }
+
+    function it_can_be_processed(): void
+    {
+        $this->setState(OrderInterface::STATE_CART);
+
+        $this->canBeProcessed()->shouldReturn(true);
+
+        $this->setState(OrderInterface::STATE_NEW);
+
+        $this->canBeProcessed()->shouldReturn(false);
     }
 }

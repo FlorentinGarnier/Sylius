@@ -17,6 +17,7 @@ use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 use Sylius\Bundle\ApiBundle\Command\Account\RequestResetPasswordToken;
 use Sylius\Bundle\ApiBundle\Command\Account\SendResetPasswordEmail;
+use Sylius\Calendar\Provider\DateTimeProviderInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\User\Repository\UserRepositoryInterface;
 use Sylius\Component\User\Security\Generator\GeneratorInterface;
@@ -30,9 +31,10 @@ final class RequestResetPasswordTokenHandlerSpec extends ObjectBehavior
     function let(
         UserRepositoryInterface $userRepository,
         MessageBusInterface $messageBus,
-        GeneratorInterface $generator
+        GeneratorInterface $generator,
+        DateTimeProviderInterface $dateTimeProvider,
     ): void {
-        $this->beConstructedWith($userRepository, $messageBus, $generator);
+        $this->beConstructedWith($userRepository, $messageBus, $generator, $dateTimeProvider);
     }
 
     function it_is_a_message_handler(): void
@@ -44,9 +46,11 @@ final class RequestResetPasswordTokenHandlerSpec extends ObjectBehavior
         UserRepositoryInterface $userRepository,
         ShopUserInterface $shopUser,
         GeneratorInterface $generator,
-        MessageBusInterface $messageBus
+        DateTimeProviderInterface $dateTimeProvider,
+        MessageBusInterface $messageBus,
     ): void {
         $userRepository->findOneByEmail('test@email.com')->willReturn($shopUser);
+        $dateTimeProvider->now()->willReturn(new \DateTime());
 
         $generator->generate()->willReturn('TOKEN');
         $shopUser->setPasswordResetToken('TOKEN')->shouldBeCalled();
@@ -56,7 +60,7 @@ final class RequestResetPasswordTokenHandlerSpec extends ObjectBehavior
 
         $messageBus->dispatch(
             $sendResetPasswordEmail,
-            [new DispatchAfterCurrentBusStamp()]
+            [new DispatchAfterCurrentBusStamp()],
         )->willReturn(new Envelope($sendResetPasswordEmail))->shouldBeCalled();
 
         $requestResetPasswordToken = new RequestResetPasswordToken('test@email.com');
@@ -66,17 +70,18 @@ final class RequestResetPasswordTokenHandlerSpec extends ObjectBehavior
         $this($requestResetPasswordToken);
     }
 
-    function it_throws_exception_if_shop_user_has_not_been_found(UserRepositoryInterface $userRepository): void
-    {
+    function it_does_nothing_when_shop_user_has_not_been_found(
+        UserRepositoryInterface $userRepository,
+        MessageBusInterface $messageBus,
+    ): void {
         $userRepository->findOneByEmail('test@email.com')->willReturn(null);
+
+        $messageBus->dispatch(Argument::any())->shouldNotBeCalled();
 
         $requestResetPasswordToken = new RequestResetPasswordToken('test@email.com');
         $requestResetPasswordToken->setChannelCode('WEB');
         $requestResetPasswordToken->setLocaleCode('en_US');
 
-        $this
-            ->shouldThrow(\InvalidArgumentException::class)
-            ->during('__invoke', [$requestResetPasswordToken])
-        ;
+        $this($requestResetPasswordToken);
     }
 }

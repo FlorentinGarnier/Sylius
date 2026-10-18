@@ -20,13 +20,14 @@ use Sylius\Component\Core\Model\AdminUserInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
+use Symfony\Component\Security\Core\User\UserInterface as SymfonyUserInterface;
 
 /** @experimental */
 final class CustomerItemDataProvider implements RestrictedDataProviderInterface, ItemDataProviderInterface
 {
     public function __construct(
         private UserContextInterface $userContext,
-        private CustomerRepositoryInterface $customerRepository
+        private CustomerRepositoryInterface $customerRepository,
     ) {
     }
 
@@ -35,7 +36,7 @@ final class CustomerItemDataProvider implements RestrictedDataProviderInterface,
         /** @var ShopUserInterface|null $user */
         $user = $this->userContext->getUser();
 
-        if ($user instanceof AdminUserInterface && in_array('ROLE_API_ACCESS', $user->getRoles(), true)) {
+        if ($user instanceof AdminUserInterface && $user instanceof SymfonyUserInterface && in_array('ROLE_API_ACCESS', $user->getRoles(), true)) {
             return $this->customerRepository->find($id);
         }
 

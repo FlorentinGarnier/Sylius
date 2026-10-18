@@ -20,14 +20,10 @@ use Webmozart\Assert\Assert;
 
 final class HomepageContext implements Context
 {
-    private HomePageInterface $homePage;
-
-    private MenuElementInterface $menuElement;
-
-    public function __construct(HomePageInterface $homePage, MenuElementInterface $menuElement)
-    {
-        $this->homePage = $homePage;
-        $this->menuElement = $menuElement;
+    public function __construct(
+        private HomePageInterface $homePage,
+        private MenuElementInterface $menuElement,
+    ) {
     }
 
     /**
@@ -53,6 +49,22 @@ final class HomepageContext implements Context
     public function iShouldSeeProductsInTheList(int $numberOfProducts): void
     {
         Assert::same(count($this->homePage->getLatestProductsNames()), $numberOfProducts);
+    }
+
+    /**
+     * @Then I should see :productName product
+     */
+    public function iShouldSeeProduct(string $productName): void
+    {
+        Assert::inArray($productName, $this->homePage->getLatestProductsNames());
+    }
+
+    /**
+     * @Then I should not see :productName product
+     */
+    public function iShouldNotSeeProduct(string $productName): void
+    {
+        Assert::true(!in_array($productName, $this->homePage->getLatestProductsNames()));
     }
 
     /**

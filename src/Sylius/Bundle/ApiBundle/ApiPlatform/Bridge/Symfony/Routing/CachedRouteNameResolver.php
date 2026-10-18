@@ -30,23 +30,30 @@ final class CachedRouteNameResolver implements RouteNameResolverInterface
     public function __construct(
         CacheItemPoolInterface $cacheItemPool,
         private RouteNameResolverInterface $decorated,
-        private PathPrefixProviderInterface $pathPrefixProvider
+        private PathPrefixProviderInterface $pathPrefixProvider,
     ) {
         $this->cacheItemPool = $cacheItemPool;
     }
 
     public function getRouteName(string $resourceClass, $operationType /*, array $context = []*/): string
     {
-        $currentPrefix = sprintf('route_name_%s_', $this->pathPrefixProvider->getCurrentPrefix());
-
         $context = \func_num_args() > 2 ? func_get_arg(2) : [];
 
+        $currentPrefix = sprintf(
+            'route_name_%s_',
+            (isset($context['section'])) ? $context['section'] : $this->pathPrefixProvider->getCurrentPrefix(),
+        );
+
         $cacheKey = $currentPrefix . md5(
-            serialize([$resourceClass, $operationType, $context['subresource_resources'] ?? null])
+            serialize([$resourceClass, $operationType, $context['subresource_resources'] ?? null]),
         );
 
         return $this->getCached($cacheKey, function () use ($resourceClass, $operationType, $context) {
-            /** @psalm-suppress TooManyArguments */
+            /**
+             * @psalm-suppress TooManyArguments
+             *
+             * @phpstan-ignore-next-line
+             */
             return $this->decorated->getRouteName($resourceClass, $operationType, $context);
         });
     }

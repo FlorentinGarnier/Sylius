@@ -16,8 +16,9 @@ namespace Sylius\Behat\Context\Api\Admin;
 use ApiPlatform\Core\Api\IriConverterInterface;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
-use Sylius\Behat\Client\ApiIriClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
+use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Channel\Model\ChannelInterface;
 use Sylius\Component\Core\Formatter\StringInflector;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -31,24 +32,13 @@ use Webmozart\Assert\Assert;
 
 final class ManagingShipmentsContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ApiIriClientInterface $iriClient;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private IriConverterInterface $iriConverter;
-
     public function __construct(
-        ApiClientInterface $client,
-        ApiIriClientInterface $iriClient,
-        ResponseCheckerInterface $responseChecker,
-        IriConverterInterface $iriConverter
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private IriConverterInterface $iriConverter,
+        private SharedStorageInterface $sharedStorage,
+        private string $apiUrlPrefix,
     ) {
-        $this->client = $client;
-        $this->iriClient = $iriClient;
-        $this->responseChecker = $responseChecker;
-        $this->iriConverter = $iriConverter;
     }
 
     /**
@@ -56,7 +46,7 @@ final class ManagingShipmentsContext implements Context
      */
     public function iBrowseShipments(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::SHIPMENTS);
     }
 
     /**
@@ -96,7 +86,9 @@ final class ManagingShipmentsContext implements Context
      */
     public function iViewTheShipmentOfTheOrder(OrderInterface $order): void
     {
-        $this->client->show((string) $order->getShipments()->first()->getId());
+        $response = $this->client->show(Resources::SHIPMENTS, (string) $order->getShipments()->first()->getId());
+
+        $this->sharedStorage->set('response', $response);
     }
 
     /**
@@ -113,7 +105,7 @@ final class ManagingShipmentsContext implements Context
      */
     public function iShipShipmentOfOrder(OrderInterface $order): void
     {
-        $this->client->applyTransition((string) $order->getShipments()->first()->getId(), ShipmentTransitions::TRANSITION_SHIP);
+        $this->client->applyTransition(Resources::SHIPMENTS, (string) $order->getShipments()->first()->getId(), ShipmentTransitions::TRANSITION_SHIP);
     }
 
     /**
@@ -125,8 +117,8 @@ final class ManagingShipmentsContext implements Context
         $shipment = $order->getShipments()->first();
 
         $this->client->customAction(
-            sprintf('/api/v2/admin/shipments/%s/ship', (string) $shipment->getId()),
-            HttpRequest::METHOD_PATCH
+            sprintf('%s/admin/shipments/%s/ship', $this->apiUrlPrefix, (string) $shipment->getId()),
+            HttpRequest::METHOD_PATCH,
         );
     }
 
@@ -136,9 +128,10 @@ final class ManagingShipmentsContext implements Context
     public function iShipTheShipmentOfOrderWithTrackingCode(OrderInterface $order, string $trackingCode): void
     {
         $this->client->applyTransition(
+            Resources::SHIPMENTS,
             (string) $order->getShipments()->first()->getId(),
             ShipmentTransitions::TRANSITION_SHIP,
-            ['tracking' => $trackingCode]
+            ['tracking' => $trackingCode],
         );
     }
 
@@ -158,7 +151,7 @@ final class ManagingShipmentsContext implements Context
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
             'You cannot ship a shipment that was shipped before.',
-            'Shipment was able to be shipped when should not.'
+            'Shipment was able to be shipped when should not.',
         );
     }
 
@@ -168,11 +161,11 @@ final class ManagingShipmentsContext implements Context
     public function iShouldSeeTheShipmentOfOrderAs(OrderInterface $order, string $shippingState): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValues($this->client->index(), [
-                'order' => $this->iriConverter->getIriFromItem($order),
+            $this->responseChecker->hasItemWithValues($this->client->index(Resources::SHIPMENTS), [
+                'order' => $this->iriConverter->getIriFromItemInSection($order, 'admin'),
                 'state' => strtolower($shippingState),
             ]),
-            sprintf('Shipment for order %s with state %s does not exist', $order->getNumber(), $shippingState)
+            sprintf('Shipment for order %s with state %s does not exist', $order->getNumber(), $shippingState),
         );
     }
 
@@ -186,9 +179,9 @@ final class ManagingShipmentsContext implements Context
                 $this->client->getLastResponse(),
                 --$position,
                 'order',
-                $this->iriConverter->getIriFromItem($order)
+                $this->iriConverter->getIriFromItem($order),
             ),
-            sprintf('On position %s there is no shipment for order %s', $position, $order->getNumber())
+            sprintf('On position %s there is no shipment for order %s', $position, $order->getNumber()),
         );
     }
 
@@ -198,9 +191,9 @@ final class ManagingShipmentsContext implements Context
     public function iShouldSeeTheShippingDateAs(OrderInterface $order, string $dateTime): void
     {
         Assert::eq(
-            new \DateTime($this->responseChecker->getValue($this->client->show((string) $order->getShipments()->first()->getId()), 'shippedAt')),
+            new \DateTime($this->responseChecker->getValue($this->client->show(Resources::SHIPMENTS, (string) $order->getShipments()->first()->getId()), 'shippedAt')),
             new \DateTime($dateTime),
-            'Shipment was shipped in different date'
+            'Shipment was shipped in different date',
         );
     }
 
@@ -212,14 +205,14 @@ final class ManagingShipmentsContext implements Context
         string $orderNumber,
         string $shippingState,
         CustomerInterface $customer,
-        ChannelInterface $channel = null
+        ChannelInterface $channel = null,
     ): void {
-        $this->client->index();
+        $this->client->index(Resources::SHIPMENTS);
 
         foreach ($this->responseChecker->getCollectionItemsWithValue(
             $this->client->getLastResponse(),
             'state',
-            StringInflector::nameToLowercaseCode($shippingState)
+            StringInflector::nameToLowercaseCode($shippingState),
         ) as $shipment) {
             $orderShowResponse = $this->client->showByIri($shipment['order']);
 
@@ -251,7 +244,7 @@ final class ManagingShipmentsContext implements Context
     {
         Assert::true(
             $this->isShipmentForOrder($order),
-            sprintf('There is no shipment for order %s', $order->getNumber())
+            sprintf('There is no shipment for order %s', $order->getNumber()),
         );
     }
 
@@ -262,7 +255,7 @@ final class ManagingShipmentsContext implements Context
     {
         Assert::false(
             $this->isShipmentForOrder($order),
-            sprintf('There is shipment for order %s', $order->getNumber())
+            sprintf('There is shipment for order %s', $order->getNumber()),
         );
     }
 
@@ -271,16 +264,18 @@ final class ManagingShipmentsContext implements Context
      */
     public function iShouldSeeUnitsInTheList(int $amount, ProductInterface $product): void
     {
-        $shipmentUnitsFromResponse = $this->responseChecker->getValue($this->client->getLastResponse(), 'units');
+        $response = $this->sharedStorage->has('response') ? $this->sharedStorage->get('response') : $this->client->getLastResponse();
+
+        $shipmentUnitsFromResponse = $this->responseChecker->getValue($response, 'units');
 
         $productUnitsCounter = 0;
         foreach ($shipmentUnitsFromResponse as $shipmentUnitFromResponse) {
-            $shipmentUnitResponse = $this->iriClient->showByIri($shipmentUnitFromResponse);
-            $productVariantResponse = $this->iriClient->showByIri(
-                $this->responseChecker->getValue($shipmentUnitResponse, 'shippable')['@id']
+            $shipmentUnitResponse = $this->client->showByIri($shipmentUnitFromResponse);
+            $productVariantResponse = $this->client->showByIri(
+                $this->responseChecker->getValue($shipmentUnitResponse, 'shippable')['@id'],
             );
-            $productResponse = $this->iriClient->showByIri(
-                $this->responseChecker->getValue($productVariantResponse, 'product')
+            $productResponse = $this->client->showByIri(
+                $this->responseChecker->getValue($productVariantResponse, 'product'),
             );
 
             $productName = $this->responseChecker->getValue($productResponse, 'translations')['en_US']['name'];
@@ -298,7 +293,7 @@ final class ManagingShipmentsContext implements Context
         return $this->responseChecker->hasItemWithValue(
             $this->client->getLastResponse(),
             'order',
-            $this->iriConverter->getIriFromItem($order)
+            $this->iriConverter->getIriFromItemInSection($order, 'admin'),
         );
     }
 }

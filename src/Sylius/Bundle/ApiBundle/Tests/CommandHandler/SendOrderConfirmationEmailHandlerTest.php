@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\ApiBundle\Tests\CommandHandler;
 
+use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Sylius\Bundle\ApiBundle\Command\Checkout\SendOrderConfirmation;
 use Sylius\Bundle\ApiBundle\CommandHandler\Checkout\SendOrderConfirmationHandler;
@@ -20,31 +21,22 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
-use Sylius\Component\Core\Test\Services\EmailChecker;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 
 final class SendOrderConfirmationEmailHandlerTest extends KernelTestCase
 {
-    /**
-     * @test
-     */
+    use ProphecyTrait;
+    use MailerAssertionsTrait;
+
+    /** @test */
     public function it_sends_order_confirmation_email(): void
     {
+        if ($this->isItSwiftmailerTestEnv()) {
+            $this->markTestSkipped('Test is relevant only for the environment without swiftmailer');
+        }
+
         $container = self::bootKernel()->getContainer();
-
-        /** @var Filesystem $filesystem */
-        $filesystem = $container->get('filesystem');
-
-        /** @var TranslatorInterface $translator */
-        $translator = $container->get('translator');
-
-        /** @var EmailChecker $emailChecker */
-        $emailChecker = $container->get('sylius.behat.email_checker');
-
-        $filesystem->remove($emailChecker->getSpoolDirectory());
-
         $emailSender = $container->get('sylius.email_sender');
 
         /** @var OrderInterface|ObjectProphecy $order */
@@ -68,20 +60,21 @@ final class SendOrderConfirmationEmailHandlerTest extends KernelTestCase
 
         $sendOrderConfirmationEmailHandler = new SendOrderConfirmationHandler(
             $emailSender,
-            $orderRepository->reveal()
+            $orderRepository->reveal(),
         );
 
         $sendOrderConfirmationEmailHandler(new SendOrderConfirmation('TOKEN'));
 
-        self::assertSame($emailChecker->countMessagesTo('johnny.bravo@email.com'), 1);
-        self::assertTrue($emailChecker->hasMessageTo(
-            sprintf(
-                '%s %s %s',
-                $translator->trans('sylius.email.order_confirmation.your_order_number', [], null, 'pl_PL'),
-                '#000001',
-                $translator->trans('sylius.email.order_confirmation.has_been_successfully_placed', [], null, 'pl_PL')
-            ),
-            'johnny.bravo@email.com'
-        ));
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertEmailAddressContains($email, 'To', 'johnny.bravo@email.com');
+        $this->assertEmailHtmlBodyContains($email, '#000001');
+    }
+
+    private function isItSwiftmailerTestEnv(): bool
+    {
+        $env = $this->getContainer()->getParameter('kernel.environment');
+
+        return $env === 'test_with_swiftmailer';
     }
 }

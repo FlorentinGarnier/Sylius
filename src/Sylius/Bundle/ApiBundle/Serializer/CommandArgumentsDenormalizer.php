@@ -25,11 +25,11 @@ final class CommandArgumentsDenormalizer implements ContextAwareDenormalizerInte
     public function __construct(
         private DenormalizerInterface $objectNormalizer,
         private IriToIdentifierConverterInterface $iriToIdentifierConverter,
-        private DataTransformerInterface $commandAwareInputDataTransformer
+        private DataTransformerInterface $commandAwareInputDataTransformer,
     ) {
     }
 
-    public function supportsDenormalization($data, $type, $format = null, array $context = [])
+    public function supportsDenormalization($data, $type, $format = null, array $context = []): bool
     {
         /** @psalm-var class-string $inputClassName|null */
         $inputClassName = $this->getInputClassName($context);

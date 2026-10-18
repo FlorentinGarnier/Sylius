@@ -48,7 +48,26 @@ class PriceHelper extends Helper
 
         return $this
             ->productVariantPriceCalculator
-            ->calculateOriginal($productVariant, $context);
+            ->calculateOriginal($productVariant, $context)
+        ;
+    }
+
+    public function getLowestPriceBeforeDiscount(ProductVariantInterface $productVariant, array $context): ?int
+    {
+        Assert::keyExists($context, 'channel');
+        Assert::isInstanceOf($this->productVariantPriceCalculator, ProductVariantPricesCalculatorInterface::class);
+
+        return $this
+            ->productVariantPriceCalculator
+            ->calculateLowestPriceBeforeDiscount($productVariant, $context)
+        ;
+    }
+
+    public function hasLowestPriceBeforeDiscount(ProductVariantInterface $productVariant, array $context): bool
+    {
+        Assert::keyExists($context, 'channel');
+
+        return null !== $this->getLowestPriceBeforeDiscount($productVariant, $context);
     }
 
     /**

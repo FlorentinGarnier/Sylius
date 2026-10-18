@@ -27,7 +27,7 @@ final class OrderPricesRecalculator implements OrderProcessorInterface
         if ($this->productVariantPriceCalculator instanceof ProductVariantPriceCalculatorInterface) {
             @trigger_error(
                 sprintf('Passing a "Sylius\Component\Core\Calculator\ProductVariantPriceCalculatorInterface" to "%s" constructor is deprecated since Sylius 1.11 and will be prohibited in 2.0. Use "Sylius\Component\Core\Calculator\ProductVariantPricesCalculatorInterface" instead.', self::class),
-                \E_USER_DEPRECATED
+                \E_USER_DEPRECATED,
             );
         }
     }
@@ -37,7 +37,7 @@ final class OrderPricesRecalculator implements OrderProcessorInterface
         /** @var OrderInterface $order */
         Assert::isInstanceOf($order, OrderInterface::class);
 
-        if (OrderInterface::STATE_CART !== $order->getState()) {
+        if (!$order->canBeProcessed()) {
             return;
         }
 
@@ -50,13 +50,13 @@ final class OrderPricesRecalculator implements OrderProcessorInterface
 
             $item->setUnitPrice($this->productVariantPriceCalculator->calculate(
                 $item->getVariant(),
-                ['channel' => $channel]
+                ['channel' => $channel],
             ));
 
             if ($this->productVariantPriceCalculator instanceof ProductVariantPricesCalculatorInterface) {
                 $item->setOriginalUnitPrice($this->productVariantPriceCalculator->calculateOriginal(
                     $item->getVariant(),
-                    ['channel' => $channel]
+                    ['channel' => $channel],
                 ));
             }
         }

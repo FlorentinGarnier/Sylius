@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\CoreBundle\Collector;
 
-use Sylius\Bundle\CoreBundle\Application\Kernel;
+use Sylius\Bundle\CoreBundle\SyliusCoreBundle;
 use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Component\Core\Context\ShopperContextInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -28,10 +28,10 @@ final class SyliusCollector extends DataCollector
     public function __construct(
         private ShopperContextInterface $shopperContext,
         array $bundles,
-        string $defaultLocaleCode
+        string $defaultLocaleCode,
     ) {
         $this->data = [
-            'version' => Kernel::VERSION,
+            'version' => SyliusCoreBundle::VERSION,
             'base_currency_code' => null,
             'currency_code' => null,
             'default_locale_code' => $defaultLocaleCode,

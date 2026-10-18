@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\AddressingBundle\Form\Type;
 
+use Sylius\Bundle\AddressingBundle\Form\EventListener\BuildZoneFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\EventSubscriber\AddCodeFormSubscriber;
 use Sylius\Bundle\ResourceBundle\Form\Type\AbstractResourceType;
 use Sylius\Component\Addressing\Model\ZoneInterface;
@@ -67,7 +68,7 @@ final class ZoneType extends AbstractResourceType
             ];
 
             if ($zone->getType() === ZoneInterface::TYPE_ZONE) {
-                $entryOptions['entry_options']['choice_filter'] = static fn(?ZoneInterface $subZone): bool => $subZone !== null && $zone->getId() !== $subZone->getId();
+                $entryOptions['entry_options']['choice_filter'] = static fn (?ZoneInterface $subZone): bool => $subZone !== null && $zone->getId() !== $subZone->getId();
             }
 
             $event->getForm()->add('members', CollectionType::class, [
@@ -80,6 +81,8 @@ final class ZoneType extends AbstractResourceType
                 'delete_empty' => true,
             ]);
         });
+
+        $builder->addEventSubscriber(new BuildZoneFormSubscriber());
     }
 
     public function getBlockPrefix(): string
@@ -101,7 +104,11 @@ final class ZoneType extends AbstractResourceType
     private function getZoneMemberEntryOptions(string $zoneMemberType): array
     {
         $zoneMemberEntryOptions = [
-            ZoneInterface::TYPE_COUNTRY => ['label' => 'sylius.form.zone.types.country'],
+            ZoneInterface::TYPE_COUNTRY => [
+                'label' => 'sylius.form.zone.types.country',
+                'enabled' => false,
+                'attr' => ['class' => 'country_search_dropdown ui fluid search selection dropdown'],
+            ],
             ZoneInterface::TYPE_PROVINCE => ['label' => 'sylius.form.zone.types.province'],
             ZoneInterface::TYPE_ZONE => ['label' => 'sylius.form.zone.types.zone'],
         ];

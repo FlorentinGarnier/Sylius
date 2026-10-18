@@ -16,6 +16,8 @@ namespace Sylius\Bundle\ApiBundle\Filter\Doctrine;
 use ApiPlatform\Core\Api\IriConverterInterface;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\AbstractContextAwareFilter;
 use ApiPlatform\Core\Bridge\Doctrine\Orm\Util\QueryNameGeneratorInterface;
+use ApiPlatform\Core\Exception\InvalidArgumentException;
+use ApiPlatform\Core\Exception\ItemNotFoundException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Sylius\Component\Taxonomy\Model\TaxonInterface;
@@ -24,7 +26,7 @@ final class TaxonFilter extends AbstractContextAwareFilter
 {
     public function __construct(
         ManagerRegistry $managerRegistry,
-        private IriConverterInterface $iriConverter
+        private IriConverterInterface $iriConverter,
     ) {
         parent::__construct($managerRegistry);
     }
@@ -36,25 +38,49 @@ final class TaxonFilter extends AbstractContextAwareFilter
         QueryNameGeneratorInterface $queryNameGenerator,
         string $resourceClass,
         string $operationName = null,
-        array $context = []
+        array $context = [],
     ) {
         if ($property !== 'taxon') {
             return;
         }
 
-        /** @var TaxonInterface $taxon */
-        $taxon = $this->iriConverter->getItemFromIri($value);
+        $taxon = null;
+
+        try {
+            /** @var TaxonInterface $taxon */
+            $taxon = $this->iriConverter->getItemFromIri($value);
+            $taxonRoot = $taxon->getRoot();
+        } catch (InvalidArgumentException|ItemNotFoundException $argumentException) {
+            $taxonRoot = null;
+        }
+
         $alias = $queryBuilder->getRootAliases()[0];
 
         $queryBuilder
-            ->distinct()
             ->addSelect('productTaxon')
             ->innerJoin(sprintf('%s.productTaxons', $alias), 'productTaxon')
             ->innerJoin('productTaxon.taxon', 'taxon')
             ->andWhere('taxon.root = :taxonRoot')
-            ->addOrderBy('productTaxon.position')
-            ->setParameter('taxonRoot', $taxon->getRoot())
+            ->setParameter('taxonRoot', $taxonRoot)
         ;
+
+        if (null !== $taxon && null !== $taxon->getLeft()) {
+            $queryBuilder
+                ->andWhere('taxon.left >= :taxonLeft')
+                ->setParameter('taxonLeft', $taxon->getLeft())
+            ;
+        }
+
+        if (null !== $taxon && null !== $taxon->getRight()) {
+            $queryBuilder
+                ->andWhere('taxon.right <= :taxonRight')
+                ->setParameter('taxonRight', $taxon->getRight())
+            ;
+        }
+
+        if (null !== $taxonRoot && empty($context['filters']['order'])) {
+            $queryBuilder->addOrderBy('productTaxon.position');
+        }
     }
 
     public function getDescription(string $resourceClass): array

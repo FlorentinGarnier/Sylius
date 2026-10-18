@@ -24,19 +24,24 @@ final class ActionBasedDiscountApplicator implements ActionBasedDiscountApplicat
 {
     public function __construct(
         private CatalogPromotionPriceCalculatorInterface $priceCalculator,
-        private iterable $discountApplicatorCriteria
-    ) {}
+        private iterable $discountApplicatorCriteria,
+    ) {
+    }
 
     public function applyDiscountOnChannelPricing(
         CatalogPromotionInterface $catalogPromotion,
         CatalogPromotionActionInterface $action,
-        ChannelPricingInterface $channelPricing
+        ChannelPricingInterface $channelPricing,
     ): void {
-        /** @var DiscountApplicationCriteriaInterface $applicatorCriterion  */
+        /** @var DiscountApplicationCriteriaInterface $applicatorCriterion */
         foreach ($this->discountApplicatorCriteria as $applicatorCriterion) {
-            if (!$applicatorCriterion->isApplicable($catalogPromotion, ['channelPricing' => $channelPricing, 'action'=> $action])) {
+            if (!$applicatorCriterion->isApplicable($catalogPromotion, ['channelPricing' => $channelPricing, 'action' => $action])) {
                 return;
             }
+        }
+
+        if ($channelPricing->getAppliedPromotions()->isEmpty() && $channelPricing->getOriginalPrice() !== null) {
+            $channelPricing->setPrice($channelPricing->getOriginalPrice());
         }
 
         try {

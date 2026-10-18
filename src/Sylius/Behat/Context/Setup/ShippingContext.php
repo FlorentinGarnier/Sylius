@@ -37,32 +37,14 @@ use Sylius\Component\Taxation\Model\TaxCategoryInterface;
 
 final class ShippingContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private ShippingMethodRepositoryInterface $shippingMethodRepository;
-
-    private RepositoryInterface $zoneRepository;
-
-    private ShippingMethodExampleFactory $shippingMethodExampleFactory;
-
-    private FactoryInterface $shippingMethodRuleFactory;
-
-    private ObjectManager $shippingMethodManager;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        ShippingMethodRepositoryInterface $shippingMethodRepository,
-        RepositoryInterface $zoneRepository,
-        ShippingMethodExampleFactory $shippingMethodExampleFactory,
-        FactoryInterface $shippingMethodRuleFactory,
-        ObjectManager $shippingMethodManager
+        private SharedStorageInterface $sharedStorage,
+        private ShippingMethodRepositoryInterface $shippingMethodRepository,
+        private RepositoryInterface $zoneRepository,
+        private ShippingMethodExampleFactory $shippingMethodExampleFactory,
+        private FactoryInterface $shippingMethodRuleFactory,
+        private ObjectManager $shippingMethodManager,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->shippingMethodRepository = $shippingMethodRepository;
-        $this->zoneRepository = $zoneRepository;
-        $this->shippingMethodExampleFactory = $shippingMethodExampleFactory;
-        $this->shippingMethodRuleFactory = $shippingMethodRuleFactory;
-        $this->shippingMethodManager = $shippingMethodManager;
     }
 
     /**
@@ -167,7 +149,7 @@ final class ShippingContext implements Context
     public function thisShippingMethodIsNamedInLocale(
         ShippingMethodInterface $shippingMethod,
         string $name,
-        string $locale
+        string $locale,
     ): void {
         $translations = $shippingMethod->getTranslations();
         /** @var ShippingMethodTranslationInterface $translation */
@@ -240,7 +222,7 @@ final class ShippingContext implements Context
         $firstFee,
         ChannelInterface $firstChannel,
         $secondFee,
-        ChannelInterface $secondChannel
+        ChannelInterface $secondChannel,
     ): void {
         $configuration = [];
         $configuration[$firstChannel->getCode()] = ['amount' => $firstFee];
@@ -289,7 +271,7 @@ final class ShippingContext implements Context
         $firstFee,
         ChannelInterface $firstChannel,
         $secondFee = null,
-        ChannelInterface $secondChannel = null
+        ChannelInterface $secondChannel = null,
     ): void {
         $configuration = [];
         $channels = [];
@@ -400,7 +382,7 @@ final class ShippingContext implements Context
      */
     public function shippingMethodBelongsToTaxCategory(
         ShippingMethodInterface $shippingMethod,
-        TaxCategoryInterface $taxCategory
+        TaxCategoryInterface $taxCategory,
     ): void {
         $shippingMethod->setTaxCategory($taxCategory);
         $this->shippingMethodManager->flush();
@@ -429,7 +411,7 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodRequiresAtLeastOneUnitMatchToShippingCategory(
         ShippingMethodInterface $shippingMethod,
-        ShippingCategoryInterface $shippingCategory
+        ShippingCategoryInterface $shippingCategory,
     ): void {
         $shippingMethod->setCategory($shippingCategory);
         $shippingMethod->setCategoryRequirement(ShippingMethodInterface::CATEGORY_REQUIREMENT_MATCH_ANY);
@@ -441,7 +423,7 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodRequiresThatAllUnitsMatchToShippingCategory(
         ShippingMethodInterface $shippingMethod,
-        ShippingCategoryInterface $shippingCategory
+        ShippingCategoryInterface $shippingCategory,
     ) {
         $shippingMethod->setCategory($shippingCategory);
         $shippingMethod->setCategoryRequirement(ShippingMethodInterface::CATEGORY_REQUIREMENT_MATCH_ALL);
@@ -453,7 +435,7 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodRequiresThatNoUnitsMatchToShippingCategory(
         ShippingMethodInterface $shippingMethod,
-        ShippingCategoryInterface $shippingCategory
+        ShippingCategoryInterface $shippingCategory,
     ): void {
         $shippingMethod->setCategory($shippingCategory);
         $shippingMethod->setCategoryRequirement(ShippingMethodInterface::CATEGORY_REQUIREMENT_MATCH_NONE);
@@ -487,11 +469,11 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodIsOnlyAvailableForOrdersOverOrEqualTo(
         ShippingMethodInterface $shippingMethod,
-        int $amount
+        int $amount,
     ): void {
         $rule = $this->createShippingMethodRule(
             OrderTotalGreaterThanOrEqualRuleChecker::TYPE,
-            $this->getConfigurationByChannels([$this->sharedStorage->get('channel')], $amount)
+            $this->getConfigurationByChannels([$this->sharedStorage->get('channel')], $amount),
         );
 
         $this->addRuleToShippingMethod($rule, $shippingMethod);
@@ -502,11 +484,11 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodIsOnlyAvailableForOrdersUnderOrEqualTo(
         ShippingMethodInterface $shippingMethod,
-        int $amount
+        int $amount,
     ): void {
         $rule = $this->createShippingMethodRule(
             OrderTotalLessThanOrEqualRuleChecker::TYPE,
-            $this->getConfigurationByChannels([$this->sharedStorage->get('channel')], $amount)
+            $this->getConfigurationByChannels([$this->sharedStorage->get('channel')], $amount),
         );
 
         $this->addRuleToShippingMethod($rule, $shippingMethod);
@@ -517,7 +499,7 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodIsOnlyAvailableForOrdersWithATotalWeightGreaterOrEqualTo(
         ShippingMethodInterface $shippingMethod,
-        float $weight
+        float $weight,
     ): void {
         $rule = $this->createShippingMethodRule(TotalWeightGreaterThanOrEqualRuleChecker::TYPE, [
             'weight' => $weight,
@@ -531,7 +513,7 @@ final class ShippingContext implements Context
      */
     public function thisShippingMethodIsOnlyAvailableForOrdersWithATotalWeightLessOrEqualTo(
         ShippingMethodInterface $shippingMethod,
-        float $weight
+        float $weight,
     ): void {
         $rule = $this->createShippingMethodRule(TotalWeightLessThanOrEqualRuleChecker::TYPE, [
             'weight' => $weight,

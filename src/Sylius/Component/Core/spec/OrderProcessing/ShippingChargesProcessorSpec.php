@@ -38,8 +38,7 @@ final class ShippingChargesProcessorSpec extends ObjectBehavior
 
     function it_removes_existing_shipping_adjustments(OrderInterface $order): void
     {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
-
+        $order->canBeProcessed()->willReturn(true);
 
         $order->getShipments()->willReturn(new ArrayCollection([]));
 
@@ -48,7 +47,7 @@ final class ShippingChargesProcessorSpec extends ObjectBehavior
 
     function it_does_not_apply_any_shipping_charge_if_order_has_no_shipments(OrderInterface $order): void
     {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
 
         $order->getShipments()->willReturn(new ArrayCollection([]));
         $order->addAdjustment(Argument::any())->shouldNotBeCalled();
@@ -62,9 +61,9 @@ final class ShippingChargesProcessorSpec extends ObjectBehavior
         AdjustmentInterface $adjustment,
         OrderInterface $order,
         ShipmentInterface $shipment,
-        ShippingMethodInterface $shippingMethod
+        ShippingMethodInterface $shippingMethod,
     ): void {
-        $order->getState()->willReturn(OrderInterface::STATE_CART);
+        $order->canBeProcessed()->willReturn(true);
 
         $adjustmentFactory->createNew()->willReturn($adjustment);
         $order->getShipments()->willReturn(new ArrayCollection([$shipment->getWrappedObject()]));
@@ -94,7 +93,7 @@ final class ShippingChargesProcessorSpec extends ObjectBehavior
 
     function it_does_nothing_if_the_order_is_in_a_state_different_than_cart(OrderInterface $order): void
     {
-        $order->getState()->willReturn(OrderInterface::STATE_NEW);
+        $order->canBeProcessed()->willReturn(false);
 
         $order->getShipments()->shouldNotBeCalled();
         $order->removeAdjustments(AdjustmentInterface::SHIPPING_ADJUSTMENT)->shouldNotBeCalled();

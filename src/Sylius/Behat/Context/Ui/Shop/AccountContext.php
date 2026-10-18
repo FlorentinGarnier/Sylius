@@ -31,40 +31,16 @@ use Webmozart\Assert\Assert;
 
 final class AccountContext implements Context
 {
-    private DashboardPageInterface $dashboardPage;
-
-    private ProfileUpdatePageInterface $profileUpdatePage;
-
-    private ChangePasswordPageInterface $changePasswordPage;
-
-    private IndexPageInterface $orderIndexPage;
-
-    private ShowPageInterface $orderShowPage;
-
-    private LoginPageInterface $loginPage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
     public function __construct(
-        DashboardPageInterface $dashboardPage,
-        ProfileUpdatePageInterface $profileUpdatePage,
-        ChangePasswordPageInterface $changePasswordPage,
-        IndexPageInterface $orderIndexPage,
-        ShowPageInterface $orderShowPage,
-        LoginPageInterface $loginPage,
-        NotificationCheckerInterface $notificationChecker,
-        SharedStorageInterface $sharedStorage
+        private DashboardPageInterface $dashboardPage,
+        private ProfileUpdatePageInterface $profileUpdatePage,
+        private ChangePasswordPageInterface $changePasswordPage,
+        private IndexPageInterface $orderIndexPage,
+        private ShowPageInterface $orderShowPage,
+        private LoginPageInterface $loginPage,
+        private NotificationCheckerInterface $notificationChecker,
+        private SharedStorageInterface $sharedStorage,
     ) {
-        $this->dashboardPage = $dashboardPage;
-        $this->profileUpdatePage = $profileUpdatePage;
-        $this->changePasswordPage = $changePasswordPage;
-        $this->orderIndexPage = $orderIndexPage;
-        $this->orderShowPage = $orderShowPage;
-        $this->loginPage = $loginPage;
-        $this->notificationChecker = $notificationChecker;
-        $this->sharedStorage = $sharedStorage;
     }
 
     /**
@@ -148,7 +124,7 @@ final class AccountContext implements Context
     {
         Assert::true($this->profileUpdatePage->checkValidationMessageFor(
             StringInflector::nameToCode($element),
-            sprintf('Please enter your %s.', $element)
+            sprintf('Please enter your %s.', $element),
         ));
     }
 
@@ -159,7 +135,7 @@ final class AccountContext implements Context
     {
         Assert::true($this->profileUpdatePage->checkValidationMessageFor(
             StringInflector::nameToCode($element),
-            sprintf('This %s is invalid.', $element)
+            sprintf('This %s is invalid.', $element),
         ));
     }
 
@@ -228,7 +204,7 @@ final class AccountContext implements Context
     {
         Assert::true($this->changePasswordPage->checkValidationMessageFor(
             'current_password',
-            'Provided password is different than the current one.'
+            'Provided password is different than the current one.',
         ));
     }
 
@@ -239,18 +215,18 @@ final class AccountContext implements Context
     {
         Assert::true($this->changePasswordPage->checkValidationMessageFor(
             'new_password',
-            'The entered passwords don\'t match'
+            'The entered passwords don\'t match',
         ));
     }
 
     /**
-     * @Then I should be notified that the password should be at least 4 characters long
+     * @Then I should be notified that the password should be at least :length characters long
      */
-    public function iShouldBeNotifiedThatThePasswordShouldBeAtLeastCharactersLong()
+    public function iShouldBeNotifiedThatThePasswordShouldBeAtLeastCharactersLong(int $length)
     {
         Assert::true($this->changePasswordPage->checkValidationMessageFor(
             'new_password',
-            'Password must be at least 4 characters long.'
+            sprintf('Password must be at least %s characters long.', $length),
         ));
     }
 
@@ -497,7 +473,7 @@ final class AccountContext implements Context
     {
         $this->notificationChecker->checkNotification(
             'An email with the verification link has been sent to your email address.',
-            NotificationType::success()
+            NotificationType::success(),
         );
     }
 
@@ -518,7 +494,7 @@ final class AccountContext implements Context
     {
         try {
             $this->dashboardPage->open();
-        } catch (UnexpectedPageException $exception) {
+        } catch (UnexpectedPageException) {
             return;
         }
 

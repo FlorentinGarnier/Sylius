@@ -20,11 +20,8 @@ use Webmozart\Assert\Assert;
 
 final class CatalogPromotionContext implements Context
 {
-    private RepositoryInterface $catalogPromotionRepository;
-
-    public function __construct(RepositoryInterface $catalogPromotionRepository)
+    public function __construct(private RepositoryInterface $catalogPromotionRepository)
     {
-        $this->catalogPromotionRepository = $catalogPromotionRepository;
     }
 
     /**
@@ -37,7 +34,7 @@ final class CatalogPromotionContext implements Context
 
         Assert::notNull(
             $catalogPromotion,
-            sprintf('Catalog promotion with name "%s" does not exist', $name)
+            sprintf('Catalog promotion with name "%s" does not exist', $name),
         );
 
         return $catalogPromotion;

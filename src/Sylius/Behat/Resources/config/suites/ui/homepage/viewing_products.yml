@@ -6,6 +6,7 @@ default:
         ui_homepage:
             contexts:
                 - sylius.behat.context.hook.doctrine_orm
+                - sylius.behat.context.hook.session
 
                 - sylius.behat.context.transform.channel
                 - sylius.behat.context.transform.lexical
@@ -19,6 +20,7 @@ default:
                 - sylius.behat.context.setup.taxonomy
 
                 - sylius.behat.context.ui.channel
+                - sylius.behat.context.ui.shop.cart
                 - sylius.behat.context.ui.shop.homepage
 
             filters:

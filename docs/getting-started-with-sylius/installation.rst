@@ -2,7 +2,7 @@ Installation
 ============
 
 So you want to try creating an online shop with Sylius? Great! The first step is the most important one, so let's start
-with the Sylius project installation via Composer. We will be using the latest stable version of Sylius - ``1.7``.
+with the Sylius project installation via Composer. We will be using the latest stable version of Sylius.
 
 Before installation
 -------------------
@@ -28,10 +28,25 @@ The easiest way to install Sylius on your local machine is to use the following 
 
 It will create a ``MyFirstShop`` directory with a brand new Sylius application inside.
 
+.. note::
+
+    Are you familiar with Docker? Check out the :doc:`Sylius Installation Guide with Docker </book/installation/installation_with_docker>`
+
 .. warning::
 
     Beware! The next step includes the database setup. It will set your database credentials
     (username, password, and database name) in the file with environment variables (``.env`` is the most basic one).
+
+.. warning::
+    Specific Sylius versions may support various Symfony versions. To make sure the correct Symfony version will be
+    installed (Symfony 6.0 for example) use:
+
+    .. code-block:: bash
+
+        composer config extra.symfony.require "^6.0"
+        composer update
+
+    Otherwise, you may face the problem of having Symfony components of the wrong version installed.
 
 To launch a Sylius application initial data has to be set up: an administrator account and base locale.
 Run the Sylius installation command to do that.

@@ -26,32 +26,14 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 
 final class CustomerContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private CustomerRepositoryInterface $customerRepository;
-
-    private ObjectManager $customerManager;
-
-    private FactoryInterface $customerFactory;
-
-    private FactoryInterface $userFactory;
-
-    private FactoryInterface $addressFactory;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        CustomerRepositoryInterface $customerRepository,
-        ObjectManager $customerManager,
-        FactoryInterface $customerFactory,
-        FactoryInterface $userFactory,
-        FactoryInterface $addressFactory
+        private SharedStorageInterface $sharedStorage,
+        private CustomerRepositoryInterface $customerRepository,
+        private ObjectManager $customerManager,
+        private FactoryInterface $customerFactory,
+        private FactoryInterface $userFactory,
+        private FactoryInterface $addressFactory,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->customerRepository = $customerRepository;
-        $this->customerManager = $customerManager;
-        $this->customerFactory = $customerFactory;
-        $this->userFactory = $userFactory;
-        $this->addressFactory = $addressFactory;
     }
 
     /**
@@ -157,6 +139,7 @@ final class CustomerContext implements Context
 
     /**
      * @Given /^(the customer) belongs to (group "([^"]+)")$/
+     * @Given /^(this customer) belongs to (group "([^"]+)")$/
      */
     public function theCustomerBelongsToGroup(CustomerInterface $customer, CustomerGroupInterface $customerGroup)
     {
@@ -198,7 +181,7 @@ final class CustomerContext implements Context
         $firstName = null,
         $lastName = null,
         \DateTimeInterface $createdAt = null,
-        $phoneNumber = null
+        $phoneNumber = null,
     ) {
         /** @var CustomerInterface $customer */
         $customer = $this->customerFactory->createNew();
@@ -232,7 +215,7 @@ final class CustomerContext implements Context
         $enabled = true,
         $firstName = null,
         $lastName = null,
-        $role = null
+        $role = null,
     ) {
         /** @var ShopUserInterface $user */
         $user = $this->userFactory->createNew();

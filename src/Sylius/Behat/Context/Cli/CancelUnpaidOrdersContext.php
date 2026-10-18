@@ -13,13 +13,13 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Context\Cli;
 
+use Behat\Behat\Context\Context;
 use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
-use Webmozart\Assert\Assert;
-use Behat\Behat\Context\Context;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Webmozart\Assert\Assert;
 
 final class CancelUnpaidOrdersContext implements Context
 {
@@ -29,12 +29,11 @@ final class CancelUnpaidOrdersContext implements Context
 
     private ?CommandTester $commandTester = null;
 
-    private OrderRepositoryInterface $orderRepository;
-
-    public function __construct(KernelInterface $kernel, OrderRepositoryInterface $orderRepository)
-    {
+    public function __construct(
+        KernelInterface $kernel,
+        private OrderRepositoryInterface $orderRepository,
+    ) {
         $this->application = new Application($kernel);
-        $this->orderRepository = $orderRepository;
     }
 
     /**
@@ -64,6 +63,6 @@ final class CancelUnpaidOrdersContext implements Context
      */
     public function shouldBeInformedThatUnpaidOrdersHaveBeenCanceled(): void
     {
-        Assert::contains($this->commandTester->getDisplay(), "Unpaid orders have been canceled");
+        Assert::contains($this->commandTester->getDisplay(), 'Unpaid orders have been canceled');
     }
 }

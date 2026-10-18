@@ -36,6 +36,8 @@ interface CreateSimpleProductPageInterface extends BaseCreatePageInterface
 
     public function addAttribute(string $attributeName, string $value, string $localeCode): void;
 
+    public function selectAttributeValue(string $attributeName, string $value, string $localeCode): void;
+
     public function addNonTranslatableAttribute(string $attributeName, string $value): void;
 
     public function getAttributeValidationErrors(string $attributeName, string $localeCode): string;
@@ -64,4 +66,6 @@ interface CreateSimpleProductPageInterface extends BaseCreatePageInterface
     public function setShippingRequired(bool $isShippingRequired): void;
 
     public function getChannelPricingValidationMessage(): string;
+
+    public function cancelChanges(): void;
 }

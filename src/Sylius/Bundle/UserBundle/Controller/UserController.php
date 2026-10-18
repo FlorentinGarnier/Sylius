@@ -51,7 +51,7 @@ class UserController extends ResourceController
         $formType = $this->getSyliusAttribute($request, 'form', UserChangePasswordType::class);
         $form = $this->createResourceForm($configuration, $formType, $changePassword);
 
-        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isValid()) {
+        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isSubmitted() && $form->isValid()) {
             return $this->handleChangePassword($request, $configuration, $user, $changePassword->getNewPassword());
         }
 
@@ -61,7 +61,7 @@ class UserController extends ResourceController
 
         return new Response($this->container->get('twig')->render(
             $configuration->getTemplate('changePassword.html'),
-            ['form' => $form->createView()]
+            ['form' => $form->createView()],
         ));
     }
 
@@ -100,7 +100,7 @@ class UserController extends ResourceController
         $formType = $this->getSyliusAttribute($request, 'form', UserResetPasswordType::class);
         $form = $this->createResourceForm($configuration, $formType, $passwordReset);
 
-        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isValid()) {
+        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isSubmitted() && $form->isValid()) {
             return $this->handleResetPassword($request, $configuration, $user, $passwordReset->getPassword());
         }
 
@@ -113,7 +113,7 @@ class UserController extends ResourceController
             [
                 'form' => $form->createView(),
                 'user' => $user,
-            ]
+            ],
         ));
     }
 
@@ -213,7 +213,7 @@ class UserController extends ResourceController
             Assert::notNull($template, 'Template is not configured.');
         }
 
-        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isValid()) {
+        if (in_array($request->getMethod(), ['POST', 'PUT', 'PATCH'], true) && $form->handleRequest($request)->isSubmitted() && $form->isValid()) {
             $userRepository = $this->repository;
 
             /** @var UserRepositoryInterface $userRepository */
@@ -236,7 +236,7 @@ class UserController extends ResourceController
                 return $this->redirectHandler->redirectToRoute(
                     $configuration,
                     $configuration->getParameters()->get('redirect')['route'],
-                    $configuration->getParameters()->get('redirect')['parameters']
+                    $configuration->getParameters()->get('redirect')['parameters'],
                 );
             }
 
@@ -251,14 +251,14 @@ class UserController extends ResourceController
             $template,
             [
                 'form' => $form->createView(),
-            ]
+            ],
         ));
     }
 
     protected function addTranslatedFlash(string $type, string $message): void
     {
         $translator = $this->container->get('translator');
-        $this->container->get('session')->getFlashBag()->add($type, $translator->trans($message, [], 'flashes'));
+        $this->container->get('request_stack')->getSession()->getFlashBag()->add($type, $translator->trans($message, [], 'flashes'));
     }
 
     /**
@@ -267,7 +267,7 @@ class UserController extends ResourceController
     protected function createResourceForm(
         RequestConfiguration $configuration,
         string $type,
-        $object
+        $object,
     ): FormInterface {
         if (!$configuration->isHtmlRequest()) {
             return $this->container->get('form.factory')->createNamed('', $type, $object, ['csrf_protection' => false]);
@@ -298,7 +298,7 @@ class UserController extends ResourceController
     protected function handleResetPasswordRequest(
         GeneratorInterface $generator,
         UserInterface $user,
-        string $senderEvent
+        string $senderEvent,
     ): void {
         $user->setPasswordResetToken($generator->generate());
         $user->setPasswordRequestedAt(new \DateTime());
@@ -316,7 +316,7 @@ class UserController extends ResourceController
         Request $request,
         RequestConfiguration $configuration,
         UserInterface $user,
-        string $newPassword
+        string $newPassword,
     ): Response {
         $user->setPlainPassword($newPassword);
         $user->setPasswordResetToken(null);
@@ -344,7 +344,7 @@ class UserController extends ResourceController
         Request $request,
         RequestConfiguration $configuration,
         UserInterface $user,
-        string $newPassword
+        string $newPassword,
     ): Response {
         $user->setPlainPassword($newPassword);
 

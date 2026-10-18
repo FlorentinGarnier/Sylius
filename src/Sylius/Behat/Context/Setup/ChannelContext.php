@@ -28,32 +28,14 @@ use Sylius\Component\Core\Test\Services\DefaultChannelFactoryInterface;
 
 final class ChannelContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private ChannelContextSetterInterface $channelContextSetter;
-
-    private DefaultChannelFactoryInterface $unitedStatesChannelFactory;
-
-    private DefaultChannelFactoryInterface $defaultChannelFactory;
-
-    private ChannelRepositoryInterface $channelRepository;
-
-    private ObjectManager $channelManager;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        ChannelContextSetterInterface $channelContextSetter,
-        DefaultChannelFactoryInterface $unitedStatesChannelFactory,
-        DefaultChannelFactoryInterface $defaultChannelFactory,
-        ChannelRepositoryInterface $channelRepository,
-        ObjectManager $channelManager
+        private SharedStorageInterface $sharedStorage,
+        private ChannelContextSetterInterface $channelContextSetter,
+        private DefaultChannelFactoryInterface $unitedStatesChannelFactory,
+        private DefaultChannelFactoryInterface $defaultChannelFactory,
+        private ChannelRepositoryInterface $channelRepository,
+        private ObjectManager $channelManager,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->channelContextSetter = $channelContextSetter;
-        $this->unitedStatesChannelFactory = $unitedStatesChannelFactory;
-        $this->defaultChannelFactory = $defaultChannelFactory;
-        $this->channelRepository = $channelRepository;
-        $this->channelManager = $channelManager;
     }
 
     /**
@@ -62,6 +44,21 @@ final class ChannelContext implements Context
     public function channelHasAccountVerificationDisabled(ChannelInterface $channel): void
     {
         $channel->setAccountVerificationRequired(false);
+
+        $this->channelManager->flush();
+    }
+
+    /**
+     * @Given /^the (channel "[^"]+") has ("([^"]+)" and "([^"]+)" taxons) excluded from showing the lowest price of discounted products$/
+     */
+    public function theTaxonAndTaxonAreExcludedFromShowingTheLowestPriceOfDiscountedProductsOnThisChannel(
+        ChannelInterface $channel,
+        iterable $taxons,
+    ): void {
+        /** @var TaxonInterface $taxon */
+        foreach ($taxons as $taxon) {
+            $channel->getChannelPriceHistoryConfig()->addTaxonExcludedFromShowingLowestPrice($taxon);
+        }
 
         $this->channelManager->flush();
     }
@@ -105,14 +102,18 @@ final class ChannelContext implements Context
      * @Given /^the store(?:| also) operates on (?:a|another) channel named "([^"]+)"$/
      * @Given /^the store(?:| also) operates on (?:a|another) channel named "([^"]+)" in "([^"]+)" currency$/
      * @Given /^the store(?:| also) operates on (?:a|another) channel named "([^"]+)" in "([^"]+)" currency and with hostname "([^"]+)"$/
-     * @Given the store operates on a channel identified by :code code
      * @Given the store (also) operates on a(nother) channel named :channelName with hostname :hostname
+     * @Given the store operates on a channel identified by :channelCode code
      */
-    public function theStoreOperatesOnAChannelNamed(string $channelName, string $currencyCode = null, string $hostname = null): void
-    {
-        $channelCode = StringInflector::nameToLowercaseCode($channelName);
+    public function theStoreOperatesOnAChannelNamed(
+        string $channelName = null,
+        string $currencyCode = null,
+        string $hostname = null,
+        string $channelCode = null,
+    ): void {
+        $channelCode = $channelCode ?? StringInflector::nameToLowercaseCode($channelName);
+        $channelName = $channelName ?? $channelCode;
         $defaultData = $this->defaultChannelFactory->create($channelCode, $channelName, $currencyCode);
-
         $defaultData['channel']->setHostname($hostname);
 
         $this->sharedStorage->setClipboard($defaultData);
@@ -134,6 +135,16 @@ final class ChannelContext implements Context
     public function theChannelIsDisabled(ChannelInterface $channel)
     {
         $this->changeChannelState($channel, false);
+    }
+
+    /**
+     * @Given /^the (channel "[^"]+") has showing the lowest price of discounted products (enabled|disabled)$/
+     */
+    public function theChannelHasShowingTheLowestPriceOfDiscountedProducts(ChannelInterface $channel, string $visible)
+    {
+        $channel->getChannelPriceHistoryConfig()->setLowestPriceForDiscountedProductsVisible($visible === 'enabled');
+
+        $this->channelManager->flush();
     }
 
     /**
@@ -177,7 +188,7 @@ final class ChannelContext implements Context
      * @Given /^on (this channel) payment step is skipped if only a single payment method is available$/
      */
     public function onThisChannelPaymentStepIsSkippedIfOnlyASinglePaymentMethodIsAvailable(
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ) {
         $channel->setSkippingPaymentStepAllowed(true);
 
@@ -204,7 +215,7 @@ final class ChannelContext implements Context
         string $postcode,
         string $city,
         CountryInterface $country,
-        string $taxId
+        string $taxId,
     ): void {
         $shopBillingData = new ShopBillingData();
         $shopBillingData->setCompany($company);
@@ -263,6 +274,50 @@ final class ChannelContext implements Context
         $this->sharedStorage->set('channel', $channel);
         $this->sharedStorage->set('hostname', $channel->getHostname());
         $this->channelContextSetter->setChannel($channel);
+    }
+
+    /**
+     * @Given /^its required address in the checkout is (billing|shipping)$/
+     */
+    public function itsRequiredAddressInTheCheckoutIs(string $type): void
+    {
+        /** @var ChannelInterface $channel */
+        $channel = $this->sharedStorage->get('channel');
+        $channel->setShippingAddressInCheckoutRequired($type === 'shipping');
+
+        $this->channelManager->flush();
+    }
+
+    /**
+     * @Given /^(this channel) has (\d+) day(?:|s) set as the lowest price for discounted products checking period$/
+     */
+    public function thisChannelHasDaysSetAsTheLowestPriceForDiscountedProductsCheckingPeriod(
+        ChannelInterface $channel,
+        int $days,
+    ): void {
+        $channel->getChannelPriceHistoryConfig()->setLowestPriceForDiscountedProductsCheckingPeriod($days);
+
+        $this->channelManager->flush();
+    }
+
+    /**
+     * @Given the :taxon taxon is excluded from showing the lowest price of discounted products in the :channel channel
+     */
+    public function theTaxonIsExcludedFromShowingTheLowestPriceOfDiscountedProductsInTheChannel(
+        TaxonInterface $taxon,
+        ChannelInterface $channel,
+    ): void {
+        $channel->getChannelPriceHistoryConfig()->addTaxonExcludedFromShowingLowestPrice($taxon);
+
+        $this->channelManager->flush();
+    }
+
+    /**
+     * @Given /^the lowest price of discounted products prior to the current discount is disabled on (this channel)$/
+     */
+    public function theLowestPriceOfDiscountedProductsPriorToTheCurrentDiscountIsDisabledOnThisChannel(ChannelInterface $channel): void
+    {
+        $channel->getChannelPriceHistoryConfig()->setLowestPriceForDiscountedProductsVisible(false);
     }
 
     /**

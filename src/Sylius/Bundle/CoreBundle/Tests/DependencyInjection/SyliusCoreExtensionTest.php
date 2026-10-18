@@ -15,11 +15,44 @@ namespace Sylius\Bundle\CoreBundle\Tests\DependencyInjection;
 
 use Doctrine\Bundle\MigrationsBundle\DependencyInjection\DoctrineMigrationsExtension;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Matthias\SymfonyDependencyInjectionTest\PhpUnit\DefinitionHasTagConstraint;
 use Sylius\Bundle\CoreBundle\DependencyInjection\SyliusCoreExtension;
+use Sylius\Bundle\OrderBundle\DependencyInjection\SyliusOrderExtension;
+use Sylius\Component\Core\Filesystem\Adapter\FilesystemAdapterInterface;
+use Sylius\Component\Core\Filesystem\Adapter\FlysystemFilesystemAdapter;
+use Sylius\Component\Core\Filesystem\Adapter\GaufretteFilesystemAdapter;
 use SyliusLabs\DoctrineMigrationsExtraBundle\DependencyInjection\SyliusLabsDoctrineMigrationsExtraExtension;
 
 final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
 {
+    /** @test */
+    public function it_brings_back_previous_order_processing_priorities(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load(['process_shipments_before_recalculating_prices' => true]);
+
+        $this->assertThat(
+            $this->container->findDefinition('sylius.order_processing.order_prices_recalculator'),
+            new DefinitionHasTagConstraint('sylius.order_processor', ['priority' => 40]),
+        );
+
+        $this->assertThat(
+            $this->container->findDefinition('sylius.order_processing.order_prices_recalculator'),
+            $this->logicalNot(new DefinitionHasTagConstraint('sylius.order_processor', ['priority' => 50])),
+        );
+
+        $this->assertThat(
+            $this->container->findDefinition('sylius.order_processing.order_shipment_processor'),
+            new DefinitionHasTagConstraint('sylius.order_processor', ['priority' => 50]),
+        );
+
+        $this->assertThat(
+            $this->container->findDefinition('sylius.order_processing.order_shipment_processor'),
+            $this->logicalNot(new DefinitionHasTagConstraint('sylius.order_processor', ['priority' => 40])),
+        );
+    }
+
     /** @test */
     public function it_autoconfigures_prepending_doctrine_migrations_with_proper_migrations_path_for_test_env(): void
     {
@@ -38,6 +71,34 @@ final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
         $this->testPrependingDoctrineMigrations('dev');
     }
 
+    /**
+     * @test
+     *
+     * @dataProvider provideAutoconfigureWithAttributesData
+     */
+    public function it_prepends_sylius_order_bundle_configuration_with_proper_values(bool $value, bool $orderBundleValue): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+        $this->container->registerExtension(new SyliusOrderExtension());
+        $this->container->loadFromExtension('sylius_core', [
+            'autoconfigure_with_attributes' => $value,
+        ]);
+        $this->container->loadFromExtension('sylius_order', [
+            'autoconfigure_with_attributes' => $orderBundleValue,
+        ]);
+
+        $this->load();
+
+        $syliusOrderConfig = $this->container->getExtensionConfig('sylius_order');
+        $this->assertEquals($value, $syliusOrderConfig[0]['autoconfigure_with_attributes']);
+    }
+
+    public static function provideAutoconfigureWithAttributesData(): iterable
+    {
+        yield [true, false];
+        yield [false, true];
+    }
+
     /** @test */
     public function it_does_not_autoconfigure_prepending_doctrine_migrations_if_it_is_disabled_for_test_env(): void
     {
@@ -54,6 +115,28 @@ final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
     public function it_does_not_autoconfigure_prepending_doctrine_migrations_if_it_is_disabled_for_dev_env(): void
     {
         $this->testNotPrependingDoctrineMigrations('dev');
+    }
+
+    /** @test */
+    public function it_loads_default_order_by_identifier_parameter_value_properly(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load();
+
+        $this->assertContainerBuilderHasParameter('sylius_core.order_by_identifier', true);
+    }
+
+    /** @test */
+    public function it_loads_order_by_identifier_parameter_value_properly(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load(['order_by_identifier' => true]);
+        $this->assertContainerBuilderHasParameter('sylius_core.order_by_identifier', true);
+
+        $this->load(['order_by_identifier' => false]);
+        $this->assertContainerBuilderHasParameter('sylius_core.order_by_identifier', false);
     }
 
     /** @test */
@@ -76,6 +159,36 @@ final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasParameter('sylius_core.catalog_promotions.batch_size', 100);
     }
 
+    /** @test */
+    public function it_aliases_default_filesystem_adapter_properly(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load();
+
+        $this->assertContainerBuilderHasAlias(FilesystemAdapterInterface::class, FlysystemFilesystemAdapter::class);
+    }
+
+    /** @test */
+    public function it_aliases_flysystem_filesystem_adapter_properly(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load(['filesystem' => ['adapter' => 'flysystem']]);
+
+        $this->assertContainerBuilderHasAlias(FilesystemAdapterInterface::class, FlysystemFilesystemAdapter::class);
+    }
+
+    /** @test */
+    public function it_aliases_gaufrette_filesystem_adapter_properly(): void
+    {
+        $this->container->setParameter('kernel.environment', 'dev');
+
+        $this->load(['filesystem' => ['adapter' => 'gaufrette']]);
+
+        $this->assertContainerBuilderHasAlias(FilesystemAdapterInterface::class, GaufretteFilesystemAdapter::class);
+    }
+
     protected function getContainerExtensions(): array
     {
         return [new SyliusCoreExtension()];
@@ -94,7 +207,7 @@ final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
         ));
         $this->assertSame(
             '@SyliusCoreBundle/Migrations',
-            $doctrineMigrationsExtensionConfig[0]['migrations_paths']['Sylius\Bundle\CoreBundle\Migrations']
+            $doctrineMigrationsExtensionConfig[0]['migrations_paths']['Sylius\Bundle\CoreBundle\Migrations'],
         );
 
         $syliusLabsDoctrineMigrationsExtraExtensionConfig = $this
@@ -107,7 +220,7 @@ final class SyliusCoreExtensionTest extends AbstractExtensionTestCase
         ));
         $this->assertSame(
             [],
-            $syliusLabsDoctrineMigrationsExtraExtensionConfig[0]['migrations']['Sylius\Bundle\CoreBundle\Migrations']
+            $syliusLabsDoctrineMigrationsExtraExtensionConfig[0]['migrations']['Sylius\Bundle\CoreBundle\Migrations'],
         );
     }
 

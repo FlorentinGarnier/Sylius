@@ -29,7 +29,7 @@ final class CatalogPromotionExecutorListener extends AbstractListener implements
         private AllProductVariantsCatalogPromotionsProcessorInterface $allCatalogPromotionsProcessor,
         private CatalogPromotionRepositoryInterface $catalogPromotionsRepository,
         private MessageBusInterface $messageBus,
-        private iterable $defaultCriteria = []
+        private iterable $defaultCriteria = [],
     ) {
     }
 
@@ -45,6 +45,10 @@ final class CatalogPromotionExecutorListener extends AbstractListener implements
 
         /** @var CatalogPromotionInterface $catalogPromotion */
         foreach ($catalogPromotions as $catalogPromotion) {
+            // process
+            $this->messageBus->dispatch(new UpdateCatalogPromotionState($catalogPromotion->getCode()));
+
+            // activate/deactivate
             $this->messageBus->dispatch(new UpdateCatalogPromotionState($catalogPromotion->getCode()));
         }
     }

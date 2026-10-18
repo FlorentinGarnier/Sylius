@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Client;
 
+use Lexik\Bundle\JWTAuthenticationBundle\Response\JWTAuthenticationFailureResponse;
 use Sylius\Behat\Service\SprintfResponseEscaper;
 use Symfony\Component\HttpFoundation\Response;
 use Webmozart\Assert\Assert;
@@ -36,9 +37,7 @@ final class ResponseChecker implements ResponseCheckerInterface
 
     public function getCollectionItemsWithValue(Response $response, string $key, string $value): array
     {
-        $items = array_filter($this->getCollection($response), function (array $item) use ($key, $value): bool {
-            return $item[$key] === $value;
-        });
+        $items = array_filter($this->getCollection($response), fn (array $item): bool => $item[$key] === $value);
 
         return $items;
     }
@@ -55,13 +54,22 @@ final class ResponseChecker implements ResponseCheckerInterface
         return $translations[$localeCode][$key];
     }
 
-    public function getError(Response $response): string
+    public function getError(Response $response): ?string
     {
         if ($this->hasKey($response, 'message')) {
             return $this->getValue($response, 'message');
         }
 
-        return $this->getResponseContentValue($response, 'hydra:description');
+        if ($this->hasKey($response, 'hydra:description')) {
+            return $this->getResponseContentValue($response, 'hydra:description');
+        }
+
+        return $response->getContent();
+    }
+
+    public function isAccepted(Response $response): bool
+    {
+        return $response->getStatusCode() === Response::HTTP_ACCEPTED;
     }
 
     public function isCreationSuccessful(Response $response): bool
@@ -76,6 +84,10 @@ final class ResponseChecker implements ResponseCheckerInterface
 
     public function hasAccessDenied(Response $response): bool
     {
+        if (!$response instanceof JWTAuthenticationFailureResponse) {
+            return false;
+        }
+
         return
             $response->getMessage() === 'JWT Token not found' &&
             $response->getStatusCode() === Response::HTTP_UNAUTHORIZED;
@@ -215,8 +227,8 @@ final class ResponseChecker implements ResponseCheckerInterface
             $content,
             SprintfResponseEscaper::provideMessageWithEscapedResponseContent(
                 'Content could not be parsed to array.',
-                $response
-            )
+                $response,
+            ),
         );
 
         Assert::keyExists(
@@ -224,8 +236,8 @@ final class ResponseChecker implements ResponseCheckerInterface
             $key,
             SprintfResponseEscaper::provideMessageWithEscapedResponseContent(
                 'Expected \'' . $key . '\' not found.',
-                $response
-            )
+                $response,
+            ),
         );
 
         return $content[$key];

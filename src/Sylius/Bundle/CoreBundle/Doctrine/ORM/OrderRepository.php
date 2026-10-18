@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\CoreBundle\Doctrine\ORM;
 
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Sylius\Bundle\OrderBundle\Doctrine\ORM\OrderRepository as BaseOrderRepository;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -25,8 +25,8 @@ use Sylius\Component\Core\OrderCheckoutStates;
 use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Sylius\Component\Order\Model\OrderInterface as BaseOrderInterface;
-use Sylius\Component\User\Model\UserInterface;
 use SyliusLabs\AssociationHydrator\AssociationHydrator;
+use Webmozart\Assert\Assert;
 
 class OrderRepository extends BaseOrderRepository implements OrderRepositoryInterface
 {
@@ -50,6 +50,15 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
         ;
     }
 
+    public function createSearchListQueryBuilder(): QueryBuilder
+    {
+        return $this->createListQueryBuilder()
+            ->leftJoin('o.items', 'item')
+            ->leftJoin('item.variant', 'variant')
+            ->leftJoin('variant.product', 'product')
+        ;
+    }
+
     public function createByCustomerIdQueryBuilder($customerId): QueryBuilder
     {
         return $this->createListQueryBuilder()
@@ -67,6 +76,18 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
             ->setParameter('customerId', $customerId)
             ->setParameter('channelId', $channelId)
             ->setParameter('state', OrderInterface::STATE_CART)
+        ;
+    }
+
+    public function findOrderById($id): ?OrderInterface
+    {
+        return $this->createQueryBuilder('o')
+            ->andWhere('o.id = :id')
+            ->andWhere('o.state != :state')
+            ->setParameter('id', $id)
+            ->setParameter('state', OrderInterface::STATE_CART)
+            ->getQuery()
+            ->getOneOrNullResult()
         ;
     }
 
@@ -107,7 +128,7 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
     public function countByCustomerAndCoupon(
         CustomerInterface $customer,
         PromotionCouponInterface $coupon,
-        bool $includeCancelled = false
+        bool $includeCancelled = false,
     ): int {
         $states = [OrderInterface::STATE_CART];
         if ($coupon->isReusableFromCancelledOrders()) {
@@ -184,7 +205,7 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
 
     public function findLatestNotEmptyCartByChannelAndCustomer(
         ChannelInterface $channel,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ): ?OrderInterface {
         return $this->createQueryBuilder('o')
             ->andWhere('o.state = :state')
@@ -232,7 +253,7 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
     public function getTotalPaidSalesForChannelInPeriod(
         ChannelInterface $channel,
         \DateTimeInterface $startDate,
-        \DateTimeInterface $endDate
+        \DateTimeInterface $endDate,
     ): int {
         return (int) $this->createQueryBuilder('o')
             ->select('SUM(o.total)')
@@ -278,7 +299,7 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
     public function countPaidForChannelInPeriod(
         ChannelInterface $channel,
         \DateTimeInterface $startDate,
-        \DateTimeInterface $endDate
+        \DateTimeInterface $endDate,
     ): int {
         return (int) $this->createQueryBuilder('o')
             ->select('COUNT(o.id)')
@@ -309,9 +330,9 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
         ;
     }
 
-    public function findOrdersUnpaidSince(\DateTimeInterface $terminalDate): array
+    public function findOrdersUnpaidSince(\DateTimeInterface $terminalDate, ?int $limit = null): array
     {
-        return $this->createQueryBuilder('o')
+        $queryBuilder = $this->createQueryBuilder('o')
             ->where('o.checkoutState = :checkoutState')
             ->andWhere('o.paymentState = :paymentState')
             ->andWhere('o.state = :orderState')
@@ -320,9 +341,14 @@ class OrderRepository extends BaseOrderRepository implements OrderRepositoryInte
             ->setParameter('paymentState', OrderPaymentStates::STATE_AWAITING_PAYMENT)
             ->setParameter('orderState', OrderInterface::STATE_NEW)
             ->setParameter('terminalDate', $terminalDate)
-            ->getQuery()
-            ->getResult()
         ;
+
+        if (null !== $limit) {
+            Assert::positiveInteger($limit);
+            $queryBuilder->setMaxResults($limit);
+        }
+
+        return $queryBuilder->getQuery()->getResult();
     }
 
     public function findCartForSummary($id): ?OrderInterface

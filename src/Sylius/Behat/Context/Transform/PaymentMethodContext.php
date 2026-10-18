@@ -19,11 +19,8 @@ use Webmozart\Assert\Assert;
 
 final class PaymentMethodContext implements Context
 {
-    private PaymentMethodRepositoryInterface $paymentMethodRepository;
-
-    public function __construct(PaymentMethodRepositoryInterface $paymentMethodRepository)
+    public function __construct(private PaymentMethodRepositoryInterface $paymentMethodRepository)
     {
-        $this->paymentMethodRepository = $paymentMethodRepository;
     }
 
     /**
@@ -37,7 +34,7 @@ final class PaymentMethodContext implements Context
         Assert::eq(
             count($paymentMethods),
             1,
-            sprintf('%d payment methods has been found with name "%s".', count($paymentMethods), $paymentMethodName)
+            sprintf('%d payment methods has been found with name "%s".', count($paymentMethods), $paymentMethodName),
         );
 
         return $paymentMethods[0];

@@ -16,7 +16,6 @@ namespace Sylius\Bundle\LocaleBundle\Context;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
 use Sylius\Component\Locale\Context\LocaleNotFoundException;
 use Sylius\Component\Locale\Provider\LocaleProviderInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 final class RequestHeaderBasedLocaleContext implements LocaleContextInterface
@@ -27,8 +26,7 @@ final class RequestHeaderBasedLocaleContext implements LocaleContextInterface
 
     public function getLocaleCode(): string
     {
-        $request = $this->getMainRequest();
-
+        $request = $this->requestStack->getMainRequest();
         if (null === $request) {
             throw new LocaleNotFoundException('No main request available.');
         }
@@ -44,14 +42,5 @@ final class RequestHeaderBasedLocaleContext implements LocaleContextInterface
         }
 
         return $localeCode;
-    }
-
-    private function getMainRequest(): ?Request
-    {
-        if (\method_exists($this->requestStack, 'getMainRequest')) {
-            return $this->requestStack->getMainRequest();
-        }
-
-       return $this->requestStack->getMasterRequest();
     }
 }

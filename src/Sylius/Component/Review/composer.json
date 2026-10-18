@@ -39,14 +39,19 @@
     "require": {
         "php": "^8.0",
         "doctrine/collections": "^1.6",
-        "sylius/resource": "^1.7"
+        "sylius/resource": "^1.9"
     },
     "require-dev": {
         "phpspec/phpspec": "^7.2"
     },
+    "config": {
+        "allow-plugins": {
+            "symfony/flex": true
+        }
+    },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.9-dev"
+            "dev-master": "1.12-dev"
         }
     },
     "autoload": {

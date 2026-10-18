@@ -24,8 +24,7 @@ class ProductVariantRepository extends EntityRepository implements ProductVarian
     public function createQueryBuilderByProductId(string $locale, $productId): QueryBuilder
     {
         return $this->createQueryBuilder('o')
-            ->innerJoin('o.translations', 'translation')
-            ->andWhere('translation.locale = :locale')
+            ->leftJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
             ->andWhere('o.product = :productId')
             ->setParameter('locale', $locale)
             ->setParameter('productId', $productId)
@@ -140,7 +139,7 @@ class ProductVariantRepository extends EntityRepository implements ProductVarian
             ->andWhere('product.code = :productCode')
             ->andWhere($expr->orX(
                 'translation.name LIKE :phrase',
-                'o.code LIKE :phrase'
+                'o.code LIKE :phrase',
             ))
             ->setParameter('phrase', '%' . $phrase . '%')
             ->setParameter('locale', $locale)
@@ -158,7 +157,7 @@ class ProductVariantRepository extends EntityRepository implements ProductVarian
             ->innerJoin('o.translations', 'translation', 'WITH', 'translation.locale = :locale')
             ->andWhere($expr->orX(
                 'translation.name LIKE :phrase',
-                'o.code LIKE :phrase'
+                'o.code LIKE :phrase',
             ))
             ->setParameter('phrase', '%' . $phrase . '%')
             ->setParameter('locale', $locale)

@@ -16,6 +16,7 @@ namespace Sylius\Behat\Context\Api\Shop;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -24,20 +25,11 @@ use Webmozart\Assert\Assert;
 
 final class ShipmentContext implements Context
 {
-    private ApiClientInterface $shipmentsClient;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
     public function __construct(
-        ApiClientInterface $shipmentsClient,
-        ResponseCheckerInterface $responseChecker,
-        SharedStorageInterface $sharedStorage
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private SharedStorageInterface $sharedStorage,
     ) {
-        $this->shipmentsClient = $shipmentsClient;
-        $this->responseChecker = $responseChecker;
-        $this->sharedStorage = $sharedStorage;
     }
 
     /**
@@ -52,7 +44,7 @@ final class ShipmentContext implements Context
         /** @var ShipmentInterface $shipment */
         $shipment = $order->getShipments()->first();
 
-        $this->shipmentsClient->show((string) $shipment->getId());
+        $this->client->show(Resources::SHIPMENTS, (string) $shipment->getId());
     }
 
     /**
@@ -60,6 +52,6 @@ final class ShipmentContext implements Context
      */
     public function iShouldNotBeAbleToSeeThatShipment(): void
     {
-        Assert::false($this->responseChecker->isShowSuccessful($this->shipmentsClient->getLastResponse()));
+        Assert::false($this->responseChecker->isShowSuccessful($this->client->getLastResponse()));
     }
 }
