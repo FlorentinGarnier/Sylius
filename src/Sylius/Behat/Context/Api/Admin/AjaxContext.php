@@ -17,19 +17,15 @@ use Behat\Behat\Context\Context;
 use Sylius\Component\Core\Model\ProductInterface;
 use Symfony\Component\BrowserKit\AbstractBrowser;
 use Symfony\Component\BrowserKit\Cookie;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Webmozart\Assert\Assert;
 
 final class AjaxContext implements Context
 {
-    private AbstractBrowser $client;
-
-    private SessionInterface $session;
-
-    public function __construct(AbstractBrowser $client, SessionInterface $session)
-    {
-        $this->client = $client;
-        $this->session = $session;
+    public function __construct(
+        private AbstractBrowser $client,
+        private RequestStack $requestStack,
+    ) {
     }
 
     /**
@@ -37,13 +33,13 @@ final class AjaxContext implements Context
      */
     public function iLookForVariantWithDescriptorWithinProduct($phrase, ProductInterface $product): void
     {
-        $this->client->getCookieJar()->set(new Cookie($this->session->getName(), $this->session->getId()));
+        $this->client->getCookieJar()->set(new Cookie($this->requestStack->getSession()->getName(), $this->requestStack->getSession()->getId()));
         $this->client->request(
             'GET',
             '/admin/ajax/product-variants/search',
             ['phrase' => $phrase, 'productCode' => $product->getCode()],
             [],
-            ['ACCEPT' => 'application/json']
+            ['ACCEPT' => 'application/json'],
         );
     }
 
@@ -63,9 +59,7 @@ final class AjaxContext implements Context
      */
     public function iShouldSeeTheProductVariantNamedAnd(...$names): void
     {
-        $itemsNames = array_map(static function ($item) {
-            return strstr($item['descriptor'], ' ', true);
-        }, $this->getJSONResponse());
+        $itemsNames = array_map(static fn ($item) => strstr($item['descriptor'], ' ', true), $this->getJSONResponse());
 
         Assert::allOneOf($itemsNames, $names);
     }

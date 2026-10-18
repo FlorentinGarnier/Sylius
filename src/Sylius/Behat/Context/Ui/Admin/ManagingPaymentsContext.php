@@ -24,20 +24,11 @@ use Webmozart\Assert\Assert;
 
 final class ManagingPaymentsContext implements Context
 {
-    private IndexPageInterface $indexPage;
-
-    private ShowPageInterface $orderShowPage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
     public function __construct(
-        IndexPageInterface $indexPage,
-        ShowPageInterface $orderShowPage,
-        NotificationCheckerInterface $notificationChecker
+        private IndexPageInterface $indexPage,
+        private ShowPageInterface $orderShowPage,
+        private NotificationCheckerInterface $notificationChecker,
     ) {
-        $this->indexPage = $indexPage;
-        $this->orderShowPage = $orderShowPage;
-        $this->notificationChecker = $notificationChecker;
     }
 
     /**
@@ -104,7 +95,7 @@ final class ManagingPaymentsContext implements Context
     public function thePaymentOfTheOrderShouldBeFor(
         string $orderNumber,
         string $paymentState,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ): void {
         $parameters = [
             'number' => $orderNumber,

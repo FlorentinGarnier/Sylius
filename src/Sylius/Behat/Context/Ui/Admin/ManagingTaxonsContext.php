@@ -27,36 +27,15 @@ use Webmozart\Assert\Assert;
 
 final class ManagingTaxonsContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private CreatePageInterface $createPage;
-
-    private CreateForParentPageInterface $createForParentPage;
-
-    private UpdatePageInterface $updatePage;
-
-    private CurrentPageResolverInterface $currentPageResolver;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    private JavaScriptTestHelper $testHelper;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        CreatePageInterface $createPage,
-        CreateForParentPageInterface $createForParentPage,
-        UpdatePageInterface $updatePage,
-        CurrentPageResolverInterface $currentPageResolver,
-        NotificationCheckerInterface $notificationChecker,
-        JavaScriptTestHelper $testHelper
+        private SharedStorageInterface $sharedStorage,
+        private CreatePageInterface $createPage,
+        private CreateForParentPageInterface $createForParentPage,
+        private UpdatePageInterface $updatePage,
+        private CurrentPageResolverInterface $currentPageResolver,
+        private NotificationCheckerInterface $notificationChecker,
+        private JavaScriptTestHelper $testHelper,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->createPage = $createPage;
-        $this->createForParentPage = $createForParentPage;
-        $this->updatePage = $updatePage;
-        $this->currentPageResolver = $currentPageResolver;
-        $this->notificationChecker = $notificationChecker;
-        $this->testHelper = $testHelper;
     }
 
     /**
@@ -204,7 +183,7 @@ final class ManagingTaxonsContext implements Context
     public function thisTaxonElementShouldHaveSlugIn($value, $language = null)
     {
         if (null !== $language) {
-            $this->updatePage->activateLanguageTab($language ?? '');
+            $this->updatePage->activateLanguageTab($language);
         }
 
         Assert::same($this->updatePage->getSlug($language ?? ''), $value);
@@ -288,6 +267,10 @@ final class ManagingTaxonsContext implements Context
      */
     public function taxonNamedShouldNotBeAdded($name)
     {
+        if (!$this->createPage->isOpen()) {
+            $this->createPage->open();
+        }
+
         Assert::same($this->createPage->countTaxonsByName($name), 0);
     }
 
@@ -394,7 +377,7 @@ final class ManagingTaxonsContext implements Context
     {
         $this->notificationChecker->checkNotification(
             'You cannot delete a menu taxon of any channel.',
-            NotificationType::failure()
+            NotificationType::failure(),
         );
     }
 
@@ -404,8 +387,8 @@ final class ManagingTaxonsContext implements Context
     public function iShouldBeNotifiedThatICannotDeleteATaxonInUse(): void
     {
         $this->notificationChecker->checkNotification(
-            'Cannot delete, the taxon is in use.',
-            NotificationType::failure()
+            'Cannot delete, the Taxon is in use.',
+            NotificationType::failure(),
         );
     }
 
@@ -465,10 +448,7 @@ final class ManagingTaxonsContext implements Context
         Assert::false($this->updatePage->isEnabled());
     }
 
-    /**
-     * @return CreatePageInterface|CreateForParentPageInterface|UpdatePageInterface
-     */
-    private function resolveCurrentPage()
+    private function resolveCurrentPage(): CreateForParentPageInterface|CreatePageInterface|UpdatePageInterface
     {
         return $this->currentPageResolver->getCurrentPageWithForm([
             $this->createPage,

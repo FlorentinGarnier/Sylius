@@ -18,54 +18,53 @@ use Symfony\Component\HttpFoundation\Response;
 
 interface ApiClientInterface
 {
-    public function index(): Response;
+    public function request(RequestInterface $request): Response;
+
+    public function index(string $resource): Response;
 
     public function showByIri(string $iri): Response;
 
-    public function subResourceIndex(string $subResource, string $id): Response;
+    public function subResourceIndex(string $resource, string $subResource, string $id): Response;
 
-    public function show(string $id): Response;
+    public function show(string $resource, string $id): Response;
 
     public function create(?RequestInterface $request = null): Response;
 
     public function update(): Response;
 
-    public function delete(string $id): Response;
+    public function delete(string $resource, string $id): Response;
 
     public function filter(): Response;
 
     public function sort(array $sorting): Response;
 
-    public function applyTransition(string $id, string $transition, array $content = []): Response;
+    public function applyTransition(string $resource, string $id, string $transition, array $content = []): Response;
 
-    public function customItemAction(string $id, string $type, string $action): Response;
+    public function customItemAction(string $resource, string $id, string $type, string $action): Response;
 
     public function customAction(string $url, string $method): Response;
 
-    public function upload(): Response;
+    public function resend(): Response;
 
     public function executeCustomRequest(RequestInterface $request): Response;
 
-    public function buildCreateRequest(): void;
+    public function buildCreateRequest(string $resource): void;
 
-    public function buildUpdateRequest(string $id): void;
-
-    public function buildUploadRequest(): void;
+    public function buildUpdateRequest(string $resource, string $id): void;
 
     public function setRequestData(array $data): void;
 
-    /** @param string|int $value */
-    public function addParameter(string $key, $value): void;
+    public function addParameter(string $key, int|string $value): void;
 
-    /** @param string|int $value */
-    public function addFilter(string $key, $value): void;
+    public function addFilter(string $key, int|string|bool $value): void;
 
     public function clearParameters(): void;
 
     public function addFile(string $key, UploadedFile $file): void;
 
-    /** @param string|int|array $value */
-    public function addRequestData(string $key, $value): void;
+    public function addRequestData(string $key, string|int|bool|array $value): void;
+
+    public function setSubResourceData(string $key, array $data): void;
 
     public function addSubResourceData(string $key, array $data): void;
 

@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\AttributeBundle\Tests\Form\Type\AttributeType;
 
+use PHPUnit\Framework\Assert;
+use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Sylius\Bundle\AttributeBundle\Form\Type\AttributeType\SelectAttributeType;
-use PHPUnit\Framework\Assert;
-use Prophecy\Prophecy\ProphecyInterface;
 use Sylius\Component\Resource\Translation\Provider\TranslationLocaleProviderInterface;
 use Symfony\Component\Form\ChoiceList\View\ChoiceView;
 use Symfony\Component\Form\PreloadedExtension;
@@ -24,6 +24,8 @@ use Symfony\Component\Form\Test\TypeTestCase;
 
 final class SelectAttributeTypeTest extends TypeTestCase
 {
+    use ProphecyTrait;
+
     private ObjectProphecy $translationProvider;
 
     /**
@@ -64,10 +66,10 @@ final class SelectAttributeTypeTest extends TypeTestCase
         $form = $this->factory->create(
             SelectAttributeType::class,
             null,
-            $formConfiguration
+            $formConfiguration,
         );
         $view = $form->createView();
 
-        Assert::assertSame($expectedLabels, array_map(fn(ChoiceView $choiceView): string => $choiceView->label, $view->vars['choices']));
+        Assert::assertSame($expectedLabels, array_map(fn (ChoiceView $choiceView): string => (string) $choiceView->label, $view->vars['choices']));
     }
 }

@@ -35,7 +35,7 @@ class AdminUserExampleFactory extends AbstractExampleFactory implements ExampleF
         private string $localeCode,
         private ?FileLocatorInterface $fileLocator = null,
         private ?ImageUploaderInterface $imageUploader = null,
-        private ?FactoryInterface $avatarImageFactory = null
+        private ?FactoryInterface $avatarImageFactory = null,
     ) {
         $this->faker = Factory::create();
         $this->optionsResolver = new OptionsResolver();
@@ -108,10 +108,10 @@ class AdminUserExampleFactory extends AbstractExampleFactory implements ExampleF
         $imagePath = $this->fileLocator->locate($options['avatar']);
         $uploadedImage = new UploadedFile($imagePath, basename($imagePath));
 
-        /** @var AvatarImage $avatarImage */
         if ($this->avatarImageFactory === null) {
             $avatarImage = new AvatarImage();
         } else {
+            /** @var AvatarImage $avatarImage */
             $avatarImage = $this->avatarImageFactory->createNew();
         }
 

@@ -34,7 +34,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
 {
     function let(
         CartContextInterface $cartContext,
-        SectionProviderInterface $sectionResolver
+        SectionProviderInterface $sectionResolver,
     ): void {
         $this->beConstructedWith($cartContext, $sectionResolver);
     }
@@ -45,7 +45,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         SectionProviderInterface $sectionResolver,
         ShopUserInterface $user,
         UserEvent $userEvent,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($order);
@@ -61,7 +61,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         ShopUserInterface $user,
         Request $request,
         TokenInterface $token,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($order);
@@ -80,7 +80,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         UserEvent $userEvent,
         ShopUserInterface $user,
         CustomerInterface $customer,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($cart);
@@ -88,8 +88,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         $userEvent->getUser()->willReturn($user);
         $user->getCustomer()->willReturn($customer);
 
-        $cart->setCustomer($customer)->shouldBeCalled();
-        $cart->setCreatedByGuest(false)->shouldBeCalled();
+        $cart->setCustomerWithAuthorization($customer)->shouldBeCalled();
 
         $this->onImplicitLogin($userEvent);
     }
@@ -102,7 +101,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         TokenInterface $token,
         ShopUserInterface $user,
         CustomerInterface $customer,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($cart);
@@ -110,8 +109,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         $token->getUser()->willReturn($user);
         $user->getCustomer()->willReturn($customer);
 
-        $cart->setCustomer($customer)->shouldBeCalled();
-        $cart->setCreatedByGuest(false)->shouldBeCalled();
+        $cart->setCustomerWithAuthorization($customer)->shouldBeCalled();
 
         $this->onInteractiveLogin(new InteractiveLoginEvent($request->getWrappedObject(), $token->getWrappedObject()));
     }
@@ -123,14 +121,13 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         Request $request,
         TokenInterface $token,
         CustomerInterface $customer,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($cart);
         $cart->getCustomer()->willReturn($customer);
 
-        $cart->setCustomer(Argument::any())->shouldNotBeCalled();
-        $cart->setCreatedByGuest(false)->shouldNotBeCalled();
+        $cart->setCustomerWithAuthorization(Argument::any())->shouldNotBeCalled();
 
         $this->onInteractiveLogin(new InteractiveLoginEvent($request->getWrappedObject(), $token->getWrappedObject()));
     }
@@ -141,14 +138,13 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         OrderInterface $cart,
         Request $request,
         TokenInterface $token,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willReturn($cart);
-        $token->getUser()->willReturn('anon.');
+        $token->getUser()->willReturn(null);
 
-        $cart->setCustomer(Argument::any())->shouldNotBeCalled();
-        $cart->setCreatedByGuest(false)->shouldNotBeCalled();
+        $cart->setCustomerWithAuthorization(Argument::any())->shouldNotBeCalled();
 
         $this->onInteractiveLogin(new InteractiveLoginEvent($request->getWrappedObject(), $token->getWrappedObject()));
     }
@@ -158,7 +154,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         SectionProviderInterface $sectionResolver,
         UserEvent $userEvent,
         ShopUserInterface $user,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willThrow(CartNotFoundException::class);
@@ -173,7 +169,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         Request $request,
         TokenInterface $token,
         ShopUserInterface $user,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
         $cartContext->getCart()->willThrow(CartNotFoundException::class);
@@ -186,7 +182,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         CartContextInterface $cartContext,
         SectionProviderInterface $sectionResolver,
         UserEvent $userEvent,
-        SectionInterface $section
+        SectionInterface $section,
     ): void {
         $sectionResolver->getSection()->willReturn($section);
 
@@ -201,7 +197,7 @@ final class ShopCartBlamerListenerSpec extends ObjectBehavior
         SectionProviderInterface $sectionResolver,
         Request $request,
         TokenInterface $token,
-        SectionInterface $section
+        SectionInterface $section,
     ): void {
         $sectionResolver->getSection()->willReturn($section);
 

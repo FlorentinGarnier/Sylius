@@ -13,12 +13,11 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Admin\Product;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
-use DMore\ChromeDriver\ChromeDriver;
 use Sylius\Behat\Behaviour\ChecksCodeImmutability;
 use Sylius\Behat\Page\Admin\Crud\UpdatePage as BaseUpdatePage;
 use Sylius\Behat\Service\AutocompleteHelper;
+use Sylius\Behat\Service\DriverHelper;
 use Sylius\Behat\Service\SlugGenerationHelper;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
@@ -37,10 +36,10 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
         $this->activateLanguageTab($localeCode);
         $this->getElement('name', ['%locale%' => $localeCode])->setValue($name);
 
-        if ($this->getDriver() instanceof Selenium2Driver || $this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isJavascript($this->getDriver())) {
             SlugGenerationHelper::waitForSlugGeneration(
                 $this->getSession(),
-                $this->getElement('slug', ['%locale%' => $localeCode])
+                $this->getElement('slug', ['%locale%' => $localeCode]),
             );
         }
     }
@@ -62,9 +61,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
 
         $form = $this->getDocument()->find('css', 'form');
 
-        $this->getDocument()->waitFor(1, function () use ($form) {
-            return $form->hasClass('loading');
-        });
+        $this->getDocument()->waitFor(1, fn () => $form->hasClass('loading'));
     }
 
     public function removeAttribute(string $attributeName, string $localeCode): void
@@ -79,6 +76,13 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
         $this->clickTabIfItsNotActive('attributes');
 
         return $this->getElement('attribute', ['%attributeName%' => $attribute, '%localeCode%' => $localeCode])->getValue();
+    }
+
+    public function getAttributeSelectText(string $attribute, string $localeCode): string
+    {
+        $this->clickTabIfItsNotActive('attributes');
+
+        return $this->getElement('attribute_select', ['%attributeName%' => $attribute, '%localeCode%' => $localeCode])->getText();
     }
 
     public function getNonTranslatableAttributeValue(string $attribute): string
@@ -161,6 +165,15 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
         return $taxonName === $this->getDocument()->find('css', '.search > .text')->getText();
     }
 
+    public function isTaxonChosen(string $taxonName): bool
+    {
+        $productTaxonsElement = $this->getElement('product_taxons');
+
+        $taxonName = strtolower(str_replace('-', '_', $taxonName));
+
+        return str_contains($productTaxonsElement->getValue(), $taxonName);
+    }
+
     public function disableTracking(): void
     {
         $this->getElement('tracked')->uncheck();
@@ -180,7 +193,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
     {
         SlugGenerationHelper::enableSlugModification(
             $this->getSession(),
-            $this->getElement('toggle_slug_modification_button', ['%locale%' => $locale])
+            $this->getElement('toggle_slug_modification_button', ['%locale%' => $locale]),
         );
     }
 
@@ -247,7 +260,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
         if (null !== $imageTypeElement && null !== $imageSourceElement) {
             $this->saveImageUrlForType(
                 $imageTypeElement->getValue(),
-                $imageSourceElement->getAttribute('src')
+                $imageSourceElement->getAttribute('src'),
             );
         }
         $imageElement->clickLink('Delete');
@@ -272,7 +285,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
     {
         return SlugGenerationHelper::isSlugReadonly(
             $this->getSession(),
-            $this->getElement('slug', ['%locale%' => $locale])
+            $this->getElement('slug', ['%locale%' => $locale]),
         );
     }
 
@@ -286,12 +299,10 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
         $dropdown->click();
 
         foreach ($productsNames as $productName) {
-            $dropdown->waitFor(5, function () use ($productName, $productAssociationType) {
-                return $this->hasElement('association_dropdown_item', [
-                    '%association%' => $productAssociationType->getName(),
-                    '%item%' => $productName,
-                ]);
-            });
+            $dropdown->waitFor(5, fn () => $this->hasElement('association_dropdown_item', [
+                '%association%' => $productAssociationType->getName(),
+                '%item%' => $productName,
+            ]));
 
             $item = $this->getElement('association_dropdown_item', [
                 '%association%' => $productAssociationType->getName(),
@@ -350,7 +361,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
 
     public function activateLanguageTab(string $locale): void
     {
-        if (!$this->getDriver() instanceof Selenium2Driver && !$this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isNotJavascript($this->getDriver())) {
             return;
         }
 
@@ -427,7 +438,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
 
     public function hasNoPriceForChannel(string $channelName): bool
     {
-        return strpos($this->getElement('prices')->getHtml(), $channelName) === false;
+        return !str_contains($this->getElement('prices')->getHtml(), $channelName);
     }
 
     protected function getCodeElement(): NodeElement
@@ -451,6 +462,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
             'association_dropdown_item' => '.field > label:contains("%association%") ~ .product-select > div.menu > div.item:contains("%item%")',
             'association_dropdown_item_selected' => '.field > label:contains("%association%") ~ .product-select > a.label:contains("%item%")',
             'attribute' => '#attributesContainer [data-test-product-attribute-value-in-locale="%attributeName% %localeCode%"] input',
+            'attribute_select' => '#attributesContainer [data-test-product-attribute-value-in-locale="%attributeName% %localeCode%"] select',
             'attribute_element' => '.attribute',
             'attribute_delete_button' => '#attributesContainer .attributes-group .attributes-header:contains("%attributeName%") button',
             'code' => '#sylius_product_code',
@@ -558,7 +570,7 @@ class UpdateSimpleProductPage extends BaseUpdatePage implements UpdateSimpleProd
 
     private function saveImageUrlForType(string $type, string $imageUrl): void
     {
-        if (false !== strpos($imageUrl, 'data:image/jpeg')) {
+        if (str_contains($imageUrl, 'data:image/jpeg')) {
             return;
         }
 

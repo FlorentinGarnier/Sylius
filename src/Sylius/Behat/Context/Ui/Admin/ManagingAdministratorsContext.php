@@ -27,36 +27,15 @@ use Webmozart\Assert\Assert;
 
 final class ManagingAdministratorsContext implements Context
 {
-    private CreatePageInterface $createPage;
-
-    private IndexPageInterface $indexPage;
-
-    private UpdatePageInterface $updatePage;
-
-    private TopBarElementInterface $topBarElement;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    private RepositoryInterface $adminUserRepository;
-
-    private SharedStorageInterface $sharedStorage;
-
     public function __construct(
-        CreatePageInterface $createPage,
-        IndexPageInterface $indexPage,
-        UpdatePageInterface $updatePage,
-        TopBarElementInterface $topBarElement,
-        NotificationCheckerInterface $notificationChecker,
-        RepositoryInterface $adminUserRepository,
-        SharedStorageInterface $sharedStorage
+        private CreatePageInterface $createPage,
+        private IndexPageInterface $indexPage,
+        private UpdatePageInterface $updatePage,
+        private TopBarElementInterface $topBarElement,
+        private NotificationCheckerInterface $notificationChecker,
+        private RepositoryInterface $adminUserRepository,
+        private SharedStorageInterface $sharedStorage,
     ) {
-        $this->createPage = $createPage;
-        $this->indexPage = $indexPage;
-        $this->updatePage = $updatePage;
-        $this->topBarElement = $topBarElement;
-        $this->notificationChecker = $notificationChecker;
-        $this->adminUserRepository = $adminUserRepository;
-        $this->sharedStorage = $sharedStorage;
     }
 
     /**
@@ -83,6 +62,14 @@ final class ManagingAdministratorsContext implements Context
     public function iWantToBrowseAdministrators()
     {
         $this->indexPage->open();
+    }
+
+    /**
+     * @When I try to browse administrators
+     */
+    public function iTryToBrowseAdministrators(): void
+    {
+        $this->indexPage->tryToOpen();
     }
 
     /**
@@ -299,7 +286,7 @@ final class ManagingAdministratorsContext implements Context
     {
         $this->notificationChecker->checkNotification(
             'Cannot remove currently logged in user.',
-            NotificationType::failure()
+            NotificationType::failure(),
         );
     }
 

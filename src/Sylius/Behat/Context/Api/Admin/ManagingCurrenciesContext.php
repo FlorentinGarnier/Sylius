@@ -16,18 +16,15 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Webmozart\Assert\Assert;
 
 final class ManagingCurrenciesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    public function __construct(ApiClientInterface $client, ResponseCheckerInterface $responseChecker)
-    {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
+    public function __construct(
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+    ) {
     }
 
     /**
@@ -35,7 +32,7 @@ final class ManagingCurrenciesContext implements Context
      */
     public function iWantToSeeAllCurrenciesInStore(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::CURRENCIES);
     }
 
     /**
@@ -43,7 +40,7 @@ final class ManagingCurrenciesContext implements Context
      */
     public function iWantToAddNewCurrency(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::CURRENCIES);
     }
 
     /**
@@ -79,8 +76,8 @@ final class ManagingCurrenciesContext implements Context
     public function currencyShouldAppearInTheStore(string $currencyName): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $currencyName),
-            sprintf('There is no currency with name "%s"', $currencyName)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::CURRENCIES), 'name', $currencyName),
+            sprintf('There is no currency with name "%s"', $currencyName),
         );
     }
 
@@ -89,11 +86,11 @@ final class ManagingCurrenciesContext implements Context
      */
     public function thereShouldStillBeOnlyOneCurrencyWithCode(string $code): void
     {
-        $response = $this->client->index();
+        $response = $this->client->index(Resources::CURRENCIES);
         Assert::same($this->responseChecker->countCollectionItems($response), 1);
         Assert::true(
             $this->responseChecker->hasItemWithValue($response, 'code', $code),
-            sprintf('There is no currency with code "%s"', $code)
+            sprintf('There is no currency with code "%s"', $code),
         );
     }
 
@@ -105,7 +102,7 @@ final class ManagingCurrenciesContext implements Context
         $response = $this->client->getLastResponse();
         Assert::false(
             $this->responseChecker->isCreationSuccessful($response),
-            'Currency has been created successfully, but it should not'
+            'Currency has been created successfully, but it should not',
         );
         Assert::same($this->responseChecker->getError($response), 'code: Currency code must be unique.');
     }
@@ -117,7 +114,7 @@ final class ManagingCurrenciesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Currency could not be created'
+            'Currency could not be created',
         );
     }
 }

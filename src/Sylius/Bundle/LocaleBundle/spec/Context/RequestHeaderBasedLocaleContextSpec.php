@@ -35,24 +35,16 @@ final class RequestHeaderBasedLocaleContextSpec extends ObjectBehavior
 
     function it_throws_locale_not_found_exception_if_main_request_is_not_found(RequestStack $requestStack): void
     {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn(null);
-        } else {
-            $requestStack->getMasterRequest()->willReturn(null);
-        }
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this->shouldThrow(LocaleNotFoundException::class)->during('getLocaleCode');
     }
 
     function it_throws_locale_not_found_exception_if_main_request_does_not_have_accept_language_in_header(
         RequestStack $requestStack,
-        Request $request
+        Request $request,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn($request);
-        } else {
-            $requestStack->getMasterRequest()->willReturn($request);
-        }
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->headers = new HeaderBag();
 
@@ -62,13 +54,9 @@ final class RequestHeaderBasedLocaleContextSpec extends ObjectBehavior
     function it_throws_locale_not_found_exception_if_main_request_locale_code_is_not_among_available_ones(
         RequestStack $requestStack,
         LocaleProviderInterface $localeProvider,
-        Request $request
+        Request $request,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn($request);
-        } else {
-            $requestStack->getMasterRequest()->willReturn($request);
-        }
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->headers = new HeaderBag(['ACCEPT_LANGUAGE' => 'en_US']);
 
@@ -80,13 +68,9 @@ final class RequestHeaderBasedLocaleContextSpec extends ObjectBehavior
     function it_returns_main_request_locale_code(
         RequestStack $requestStack,
         LocaleProviderInterface $localeProvider,
-        Request $request
+        Request $request,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn($request);
-        } else {
-            $requestStack->getMasterRequest()->willReturn($request);
-        }
+        $requestStack->getMainRequest()->willReturn($request);
 
         $request->headers = new HeaderBag(['Accept-Language' => 'pl_PL']);
 

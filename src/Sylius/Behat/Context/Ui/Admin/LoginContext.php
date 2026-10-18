@@ -21,14 +21,10 @@ use Webmozart\Assert\Assert;
 
 final class LoginContext implements Context
 {
-    private DashboardPageInterface $dashboardPage;
-
-    private LoginPageInterface $loginPage;
-
-    public function __construct(DashboardPageInterface $dashboardPage, LoginPageInterface $loginPage)
-    {
-        $this->dashboardPage = $dashboardPage;
-        $this->loginPage = $loginPage;
+    public function __construct(
+        private DashboardPageInterface $dashboardPage,
+        private LoginPageInterface $loginPage,
+    ) {
     }
 
     /**
@@ -54,6 +50,14 @@ final class LoginContext implements Context
     public function iSpecifyThePasswordAs($password = null)
     {
         $this->loginPage->specifyPassword($password);
+    }
+
+    /**
+     * @When /^(this administrator) logs in using "([^"]+)" password$/
+     */
+    public function theyLogIn(AdminUserInterface $adminUser, $password)
+    {
+        $this->logInAgain($adminUser->getUsername(), $password);
     }
 
     /**
@@ -102,16 +106,7 @@ final class LoginContext implements Context
     public function iShouldBeAbleToLogInAsAuthenticatedByPassword($username, $password)
     {
         $this->logInAgain($username, $password);
-
-        $this->dashboardPage->verify();
-    }
-
-    /**
-     * @When /^(this administrator) logs in using "([^"]+)" password$/
-     */
-    public function theyLogIn(AdminUserInterface $adminUser, $password)
-    {
-        $this->logInAgain($adminUser->getUsername(), $password);
+        $this->iShouldBeLoggedIn();
     }
 
     /**
@@ -126,25 +121,23 @@ final class LoginContext implements Context
     }
 
     /**
-     * @param string $username
-     * @param string $password
-     */
-    private function logInAgain($username, $password)
-    {
-        $this->dashboardPage->open();
-        $this->dashboardPage->logOut();
-
-        $this->loginPage->open();
-        $this->loginPage->specifyUsername($username);
-        $this->loginPage->specifyPassword($password);
-        $this->loginPage->logIn();
-    }
-
-    /**
      * @Then I should be on the login page
      */
     public function iShouldBeOnTheLoginPage(): void
     {
         Assert::true($this->loginPage->isOpen());
+    }
+
+    private function logInAgain(string $username, string $password): void
+    {
+        $this->dashboardPage->tryToOpen();
+        if ($this->dashboardPage->isOpen()) {
+            $this->dashboardPage->logOut();
+        }
+
+        $this->loginPage->open();
+        $this->loginPage->specifyUsername($username);
+        $this->loginPage->specifyPassword($password);
+        $this->loginPage->logIn();
     }
 }

@@ -31,28 +31,13 @@ use Symfony\Component\Intl\Countries;
 
 final class ZoneContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private RepositoryInterface $zoneRepository;
-
-    private ObjectManager $objectManager;
-
-    private ZoneFactoryInterface $zoneFactory;
-
-    private FactoryInterface $zoneMemberFactory;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        RepositoryInterface $zoneRepository,
-        ObjectManager $objectManager,
-        ZoneFactoryInterface $zoneFactory,
-        FactoryInterface $zoneMemberFactory
+        private SharedStorageInterface $sharedStorage,
+        private RepositoryInterface $zoneRepository,
+        private ObjectManager $objectManager,
+        private ZoneFactoryInterface $zoneFactory,
+        private FactoryInterface $zoneMemberFactory,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->zoneRepository = $zoneRepository;
-        $this->objectManager = $objectManager;
-        $this->zoneFactory = $zoneFactory;
-        $this->zoneMemberFactory = $zoneMemberFactory;
     }
 
     /**
@@ -129,10 +114,37 @@ final class ZoneContext implements Context
      */
     public function itHasTheCountryMemberAndTheCountryMember(
         ZoneInterface $zone,
-        CountryInterface $country
+        CountryInterface $country,
     ) {
         $zone->setType(ZoneInterface::TYPE_COUNTRY);
         $zone->addMember($this->createZoneMember($country));
+
+        $this->objectManager->flush();
+    }
+
+    /**
+     * @Given /^(the "([^"]*)" (?:country|province|zone) member) has been removed from (this zone)$/
+     */
+    public function theZoneMemberHasBeenRemoved(
+        ZoneMemberInterface $zoneMember,
+        string $zoneMemberName,
+        ZoneInterface $zone,
+    ): void {
+        $zone->removeMember($zoneMember);
+
+        $this->objectManager->flush();
+    }
+
+    /**
+     * @Given /^(it)(?:| also) has the ("([^"]+)", "([^"]+)" and "([^"]+)" country) members$/
+     */
+    public function itHasCountryMembers(ZoneInterface $zone, array $countries): void
+    {
+        $zone->setType(ZoneInterface::TYPE_COUNTRY);
+
+        foreach ($countries as $country) {
+            $zone->addMember($this->createZoneMember($country));
+        }
 
         $this->objectManager->flush();
     }
@@ -143,7 +155,7 @@ final class ZoneContext implements Context
      */
     public function itHasTheProvinceMemberAndTheProvinceMember(
         ZoneInterface $zone,
-        ProvinceInterface $province
+        ProvinceInterface $province,
     ) {
         $zone->setType(ZoneInterface::TYPE_PROVINCE);
         $zone->addMember($this->createZoneMember($province));
@@ -157,7 +169,7 @@ final class ZoneContext implements Context
      */
     public function itHasTheZoneMemberAndTheZoneMember(
         ZoneInterface $parentZone,
-        ZoneInterface $childZone
+        ZoneInterface $childZone,
     ) {
         $parentZone->setType(ZoneInterface::TYPE_ZONE);
         $parentZone->addMember($this->createZoneMember($childZone));

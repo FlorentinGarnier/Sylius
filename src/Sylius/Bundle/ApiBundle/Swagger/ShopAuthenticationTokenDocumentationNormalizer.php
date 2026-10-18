@@ -21,7 +21,7 @@ final class ShopAuthenticationTokenDocumentationNormalizer implements Normalizer
 {
     public function __construct(
         private NormalizerInterface $decoratedNormalizer,
-        private string $apiRoute
+        private string $apiRoute,
     ) {
     }
 
@@ -38,6 +38,10 @@ final class ShopAuthenticationTokenDocumentationNormalizer implements Normalizer
             'type' => 'object',
             'properties' => [
                 'token' => [
+                    'type' => 'string',
+                    'readOnly' => true,
+                ],
+                'customer' => [
                     'type' => 'string',
                     'readOnly' => true,
                 ],

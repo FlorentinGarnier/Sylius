@@ -16,6 +16,8 @@ namespace Sylius\Bundle\ProductBundle\Controller;
 use Sylius\Bundle\ProductBundle\Form\Type\ProductAttributeChoiceType;
 use Sylius\Bundle\ResourceBundle\Controller\ResourceController;
 use Sylius\Component\Attribute\Model\AttributeInterface;
+use Sylius\Component\Locale\Context\LocaleContextInterface;
+use Sylius\Component\Product\Model\ProductAttribute;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,7 +32,7 @@ class ProductAttributeController extends ResourceController
             [
                 'types' => $this->get('sylius.registry.attribute_type')->all(),
                 'metadata' => $this->metadata,
-            ]
+            ],
         );
     }
 
@@ -49,13 +51,12 @@ class ProductAttributeController extends ResourceController
     {
         $template = $request->attributes->get('template', '@SyliusAttribute/attributeValueForms.html.twig');
 
-        $form = $this->get('form.factory')->create(ProductAttributeChoiceType::class, null, [
-            'multiple' => true,
+        /** @var ProductAttribute[] $attributes */
+        $attributes = $this->repository->findBy([
+            'code' => $request->query->all('sylius_product_attribute_choice'),
         ]);
-        $form->handleRequest($request);
 
-        $attributes = $form->getData();
-        if (null === $attributes) {
+        if (empty($attributes)) {
             throw new BadRequestHttpException();
         }
 
@@ -85,13 +86,13 @@ class ProductAttributeController extends ResourceController
         $forms = [];
 
         if (!$attribute->isTranslatable()) {
-            array_push($localeCodes, null);
+            $adminLocaleCode = $this->get(LocaleContextInterface::class)->getLocaleCode();
 
-            return [null => $this->createFormAndView($attributeForm, $attribute)];
+            return [null => $this->createFormAndView($attributeForm, $attribute, $adminLocaleCode)];
         }
 
         foreach ($localeCodes as $localeCode) {
-            $forms[$localeCode] = $this->createFormAndView($attributeForm, $attribute);
+            $forms[$localeCode] = $this->createFormAndView($attributeForm, $attribute, $localeCode);
         }
 
         return $forms;
@@ -99,7 +100,8 @@ class ProductAttributeController extends ResourceController
 
     private function createFormAndView(
         $attributeForm,
-        AttributeInterface $attribute
+        AttributeInterface $attribute,
+        string $localeCode,
     ): FormView {
         return $this
             ->get('form.factory')
@@ -107,8 +109,13 @@ class ProductAttributeController extends ResourceController
                 'value',
                 $attributeForm,
                 null,
-                ['label' => $attribute->getName(), 'configuration' => $attribute->getConfiguration()]
+                [
+                    'label' => $attribute->getTranslation($localeCode)->getName(),
+                    'configuration' => $attribute->getConfiguration(),
+                    'locale_code' => $localeCode,
+                ],
             )
-            ->createView();
+            ->createView()
+        ;
     }
 }

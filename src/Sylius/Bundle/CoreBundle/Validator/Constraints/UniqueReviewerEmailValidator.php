@@ -17,7 +17,6 @@ use Sylius\Component\Review\Model\ReviewerInterface;
 use Sylius\Component\User\Model\UserInterface;
 use Sylius\Component\User\Repository\UserRepositoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -28,7 +27,7 @@ class UniqueReviewerEmailValidator extends ConstraintValidator
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private TokenStorageInterface $tokenStorage,
-        private AuthorizationCheckerInterface $authorizationChecker
+        private AuthorizationCheckerInterface $authorizationChecker,
     ) {
     }
 
@@ -40,13 +39,12 @@ class UniqueReviewerEmailValidator extends ConstraintValidator
         /** @var ReviewerInterface|null $customer */
         $customer = $value->getAuthor();
 
-        $token = $this->tokenStorage->getToken();
         if (null !== $customer) {
             if (null === $customer->getEmail()) {
                 return;
             }
 
-            if ($customer->getEmail() === $this->getAuthenticatedUserEmail($token)) {
+            if ($customer->getEmail() === $this->getAuthenticatedUserEmail()) {
                 return;
             }
         }
@@ -56,8 +54,14 @@ class UniqueReviewerEmailValidator extends ConstraintValidator
         }
     }
 
-    private function getAuthenticatedUserEmail(TokenInterface $token): ?string
+    private function getAuthenticatedUserEmail(): ?string
     {
+        $token = $this->tokenStorage->getToken();
+
+        if (null === $token) {
+            return null;
+        }
+
         if (!$this->authorizationChecker->isGranted('IS_AUTHENTICATED_REMEMBERED')) {
             return null;
         }

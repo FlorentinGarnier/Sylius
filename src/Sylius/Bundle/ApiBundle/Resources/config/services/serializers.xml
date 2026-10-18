@@ -32,9 +32,21 @@
             <tag name="serializer.normalizer" />
         </service>
 
+        <service id="Sylius\Bundle\ApiBundle\Serializer\HydraErrorNormalizer" decorates="api_platform.hydra.normalizer.error">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Serializer\HydraErrorNormalizer.inner" />
+            <argument type="service" id="request_stack" />
+            <argument>%sylius.security.new_api_route%</argument>
+        </service>
+
         <service id="Sylius\Bundle\ApiBundle\Serializer\ProductNormalizer">
             <argument type="service" id="sylius.product_variant_resolver.default" />
             <argument type="service" id="api_platform.iri_converter" />
+            <tag name="serializer.normalizer" priority="64" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Serializer\ProductAttributeValueNormalizer">
+            <argument type="service" id="sylius.locale_provider.channel_based" />
+            <argument>%locale%</argument>
             <tag name="serializer.normalizer" priority="64" />
         </service>
 
@@ -64,6 +76,12 @@
             <tag name="serializer.normalizer" priority="64" />
         </service>
 
+        <service id="Sylius\Bundle\ApiBundle\Serializer\FlattenExceptionNormalizer" decorates="fos_rest.serializer.flatten_exception_normalizer">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Serializer\FlattenExceptionNormalizer.inner" />
+            <argument type="service" id="request_stack" />
+            <argument>%sylius.security.new_api_route%</argument>
+        </service>
+
         <service id="Sylius\Bundle\ApiBundle\Serializer\ShippingMethodNormalizer">
             <argument type="service" id="sylius.repository.order" />
             <argument type="service" id="sylius.repository.shipment" />
@@ -73,11 +91,29 @@
             <tag name="serializer.normalizer" priority="64" />
         </service>
 
+        <service id="Sylius\Bundle\ApiBundle\Serializer\ZoneDenormalizer">
+            <argument type="service" id="api_platform.iri_converter" />
+            <tag name="serializer.normalizer" priority="64" />
+        </service>
+
         <service id="date_time_normalizer" class="Symfony\Component\Serializer\Normalizer\DateTimeNormalizer">
             <argument type="collection">
                 <argument key="datetime_format">Y-m-d H:i:s</argument>
             </argument>
             <tag name="serializer.normalizer"/>
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Serializer\ChannelPriceHistoryConfigDenormalizer">
+            <argument type="service" id="api_platform.iri_converter" />
+            <argument type="service" id="sylius.factory.channel_price_history_config" />
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Validator\ResourceInputDataPropertiesValidatorInterface" />
+            <argument>%sylius.form.type.channel_price_history_config.validation_groups%</argument>
+            <tag name="serializer.normalizer" priority="64" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Serializer\ChannelDenormalizer">
+            <argument type="service" id="sylius.factory.channel_price_history_config" />
+            <tag name="serializer.normalizer" priority="64" />
         </service>
     </services>
 </container>

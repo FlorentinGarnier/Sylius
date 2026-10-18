@@ -22,20 +22,11 @@ use Webmozart\Assert\Assert;
 
 final class ExchangeRateContext implements Context
 {
-    private CurrencyNameConverterInterface $currencyNameConverter;
-
-    private RepositoryInterface $currencyRepository;
-
-    private ExchangeRateRepositoryInterface $exchangeRateRepository;
-
     public function __construct(
-        CurrencyNameConverterInterface $currencyNameConverter,
-        RepositoryInterface $currencyRepository,
-        ExchangeRateRepositoryInterface $exchangeRateRepository
+        private CurrencyNameConverterInterface $currencyNameConverter,
+        private RepositoryInterface $currencyRepository,
+        private ExchangeRateRepositoryInterface $exchangeRateRepository,
     ) {
-        $this->currencyNameConverter = $currencyNameConverter;
-        $this->currencyRepository = $currencyRepository;
-        $this->exchangeRateRepository = $exchangeRateRepository;
     }
 
     /**
@@ -43,7 +34,7 @@ final class ExchangeRateContext implements Context
      */
     public function getExchangeRateByCurrencies(
         string $sourceCurrencyName,
-        string $targetCurrencyName
+        string $targetCurrencyName,
     ): ExchangeRateInterface {
         $sourceCurrencyCode = $this->currencyNameConverter->convertToCode($sourceCurrencyName);
         $targetCurrencyCode = $this->currencyNameConverter->convertToCode($targetCurrencyName);
@@ -59,8 +50,8 @@ final class ExchangeRateContext implements Context
             sprintf(
                 'ExchangeRate for %s and %s currencies does not exist.',
                 $sourceCurrencyName,
-                $targetCurrencyName
-            )
+                $targetCurrencyName,
+            ),
         );
 
         return $exchangeRate;

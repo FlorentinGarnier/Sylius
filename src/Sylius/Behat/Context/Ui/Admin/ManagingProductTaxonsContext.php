@@ -20,15 +20,14 @@ use Sylius\Component\Core\Model\TaxonInterface;
 
 final class ManagingProductTaxonsContext implements Context
 {
-    private UpdateSimpleProductPageInterface $updateSimpleProductPage;
-
-    public function __construct(UpdateSimpleProductPageInterface $updateSimpleProductPage)
+    public function __construct(private UpdateSimpleProductPageInterface $updateSimpleProductPage)
     {
-        $this->updateSimpleProductPage = $updateSimpleProductPage;
     }
 
     /**
      * @When I change that the :product product belongs to the :taxon taxon
+     * @When I add :taxon taxon to the :product product
+     * @When I assign the :taxon taxon to the :product product
      */
     public function iChangeThatTheProductBelongsToTheTaxon(ProductInterface $product, TaxonInterface $taxon): void
     {
@@ -42,7 +41,7 @@ final class ManagingProductTaxonsContext implements Context
      */
     public function iChangeThatTheProductDoesNotBelongToTheTaxon(
         ProductInterface $product,
-        TaxonInterface $taxon
+        TaxonInterface $taxon,
     ): void {
         $this->updateSimpleProductPage->open(['id' => $product->getId()]);
         $this->updateSimpleProductPage->unselectProductTaxon($taxon);

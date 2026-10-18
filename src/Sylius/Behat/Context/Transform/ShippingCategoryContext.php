@@ -19,11 +19,8 @@ use Webmozart\Assert\Assert;
 
 class ShippingCategoryContext implements Context
 {
-    private RepositoryInterface $shippingCategoryRepository;
-
-    public function __construct(RepositoryInterface $shippingCategoryRepository)
+    public function __construct(private RepositoryInterface $shippingCategoryRepository)
     {
-        $this->shippingCategoryRepository = $shippingCategoryRepository;
     }
 
     /**
@@ -39,7 +36,7 @@ class ShippingCategoryContext implements Context
         Assert::eq(
             count($shippingCategories),
             1,
-            sprintf('%d shipping category has been found with name "%s".', count($shippingCategories), $shippingCategoryName)
+            sprintf('%d shipping category has been found with name "%s".', count($shippingCategories), $shippingCategoryName),
         );
 
         return $shippingCategories[0];

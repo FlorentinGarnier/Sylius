@@ -29,7 +29,7 @@ final class CheckoutResolver implements EventSubscriberInterface
         private CartContextInterface $cartContext,
         private CheckoutStateUrlGeneratorInterface $urlGenerator,
         private RequestMatcherInterface $requestMatcher,
-        private FactoryInterface $stateMachineFactory
+        private FactoryInterface $stateMachineFactory,
     ) {
     }
 
@@ -38,6 +38,7 @@ final class CheckoutResolver implements EventSubscriberInterface
         if (\method_exists($event, 'isMainRequest')) {
             $isMainRequest = $event->isMainRequest();
         } else {
+            /** @phpstan-ignore-next-line */
             $isMainRequest = $event->isMasterRequest();
         }
         if (!$isMainRequest) {

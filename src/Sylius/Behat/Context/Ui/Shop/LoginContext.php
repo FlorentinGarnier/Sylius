@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace Sylius\Behat\Context\Ui\Shop;
 
 use Behat\Behat\Context\Context;
-use FriendsOfBehat\PageObjectExtension\Page\UnexpectedPageException;
 use Sylius\Behat\Element\Shop\Account\RegisterElementInterface;
 use Sylius\Behat\NotificationType;
 use Sylius\Behat\Page\Shop\Account\LoginPageInterface;
@@ -30,44 +29,17 @@ use Webmozart\Assert\Assert;
 
 final class LoginContext implements Context
 {
-    private HomePageInterface $homePage;
-
-    private LoginPageInterface $loginPage;
-
-    private RegisterPageInterface $registerPage;
-
-    private RequestPasswordResetPageInterface $requestPasswordResetPage;
-
-    private ResetPasswordPageInterface $resetPasswordPage;
-
-    private WellKnownPasswordChangePageInterface $wellKnownPasswordChangePage;
-
-    private RegisterElementInterface $registerElement;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    private CurrentPageResolverInterface $currentPageResolver;
-
     public function __construct(
-        HomePageInterface $homePage,
-        LoginPageInterface $loginPage,
-        RegisterPageInterface $registerPage,
-        RequestPasswordResetPageInterface $requestPasswordResetPage,
-        ResetPasswordPageInterface $resetPasswordPage,
-        WellKnownPasswordChangePageInterface $wellKnownPasswordChangePage,
-        RegisterElementInterface $registerElement,
-        NotificationCheckerInterface $notificationChecker,
-        CurrentPageResolverInterface $currentPageResolver
+        private HomePageInterface $homePage,
+        private LoginPageInterface $loginPage,
+        private RegisterPageInterface $registerPage,
+        private RequestPasswordResetPageInterface $requestPasswordResetPage,
+        private ResetPasswordPageInterface $resetPasswordPage,
+        private WellKnownPasswordChangePageInterface $wellKnownPasswordChangePage,
+        private RegisterElementInterface $registerElement,
+        private NotificationCheckerInterface $notificationChecker,
+        private CurrentPageResolverInterface $currentPageResolver,
     ) {
-        $this->homePage = $homePage;
-        $this->loginPage = $loginPage;
-        $this->registerPage = $registerPage;
-        $this->requestPasswordResetPage = $requestPasswordResetPage;
-        $this->resetPasswordPage = $resetPasswordPage;
-        $this->wellKnownPasswordChangePage = $wellKnownPasswordChangePage;
-        $this->registerElement = $registerElement;
-        $this->notificationChecker = $notificationChecker;
-        $this->currentPageResolver = $currentPageResolver;
     }
 
     /**
@@ -242,7 +214,7 @@ final class LoginContext implements Context
     {
         $this->notificationChecker->checkNotification(
             'If the email you have specified exists in our system, we have sent there an instruction on how to reset your password.',
-            NotificationType::success()
+            NotificationType::success(),
         );
     }
 
@@ -283,18 +255,18 @@ final class LoginContext implements Context
     {
         Assert::true($this->resetPasswordPage->checkValidationMessageFor(
             'password',
-            'The entered passwords don\'t match'
+            'The entered passwords don\'t match',
         ));
     }
 
     /**
-     * @Then I should be notified that the password should be at least 4 characters long
+     * @Then I should be notified that the password should be at least :length characters long
      */
-    public function iShouldBeNotifiedThatThePasswordShouldBeAtLeastCharactersLong()
+    public function iShouldBeNotifiedThatThePasswordShouldBeAtLeastCharactersLong(int $length)
     {
         Assert::true($this->resetPasswordPage->checkValidationMessageFor(
             'password',
-            'Password must be at least 4 characters long.'
+            sprintf('Password must be at least %s characters long.', $length),
         ));
     }
 

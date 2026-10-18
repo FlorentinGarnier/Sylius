@@ -26,9 +26,9 @@ final class AvailableProductOptionValuesResolver implements AvailableProductOpti
             throw new \InvalidArgumentException(
                 sprintf(
                     'Cannot resolve available product option values. Option "%s" does not belong to product "%s".',
+                    $productOption->getCode(),
                     $product->getCode(),
-                    $productOption->getCode()
-                )
+                ),
             );
         }
 
@@ -41,7 +41,7 @@ final class AvailableProductOptionValuesResolver implements AvailableProductOpti
                 }
 
                 return false;
-            }
+            },
         );
     }
 }

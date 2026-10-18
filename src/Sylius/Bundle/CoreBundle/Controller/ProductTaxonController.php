@@ -37,7 +37,7 @@ class ProductTaxonController extends ResourceController
     {
         $configuration = $this->requestConfigurationFactory->create($this->metadata, $request);
         $this->isGrantedOr403($configuration, ResourceActions::UPDATE);
-        $productTaxons = $this->getParameterFromRequest($request,'productTaxons');
+        $productTaxons = $this->getParameterFromRequest($request, 'productTaxons');
         $this->validateCsrfProtection($request, $configuration);
 
         if ($this->shouldProductsPositionsBeUpdated($request, $productTaxons)) {
@@ -63,7 +63,7 @@ class ProductTaxonController extends ResourceController
     {
         $configuration = $this->requestConfigurationFactory->create($this->metadata, $request);
         $this->isGrantedOr403($configuration, ResourceActions::UPDATE);
-        $productTaxons = $this->getParameterFromRequest($request,'productTaxons');
+        $productTaxons = $this->getParameterFromRequest($request, 'productTaxons');
 
         $this->validateCsrfProtection($request, $configuration);
 
@@ -71,7 +71,6 @@ class ProductTaxonController extends ResourceController
             /** @var Session $session */
             $session = $request->getSession();
 
-            /** @var ProductTaxonInterface $productTaxon */
             foreach ($productTaxons as $id => $position) {
                 try {
                     $this->updatePositions($position, $id);
@@ -104,6 +103,7 @@ class ProductTaxonController extends ResourceController
     {
         Assert::numeric($position, sprintf('The position "%s" is invalid.', $position));
 
+        /** @var ProductTaxonInterface $productTaxonFromBase */
         $productTaxonFromBase = $this->repository->findOneBy(['id' => $id]);
         $productTaxonFromBase->setPosition((int) $position);
     }

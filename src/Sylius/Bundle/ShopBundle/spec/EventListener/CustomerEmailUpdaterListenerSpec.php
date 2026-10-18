@@ -26,8 +26,10 @@ use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\User\Security\Generator\GeneratorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
 {
@@ -35,16 +37,17 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         GeneratorInterface $tokenGenerator,
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
-        SessionInterface $session,
-        SectionProviderInterface $sectionResolver
+        RequestStack $requestStack,
+        SectionProviderInterface $sectionResolver,
+        TokenStorageInterface $tokenStorage,
     ): void {
-        $this->beConstructedWith($tokenGenerator, $channelContext, $eventDispatcher, $session, $sectionResolver);
+        $this->beConstructedWith($tokenGenerator, $channelContext, $eventDispatcher, $requestStack, $sectionResolver, $tokenStorage);
     }
 
     function it_does_nothing_change_was_performed_by_admin(
         SectionProviderInterface $sectionResolver,
         SectionInterface $section,
-        GenericEvent $event
+        GenericEvent $event,
     ): void {
         $sectionResolver->getSection()->willReturn($section);
 
@@ -62,7 +65,8 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         ShopUserInterface $user,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
+        TokenStorageInterface $tokenStorage,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -80,6 +84,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->setVerifiedAt(null)->shouldBeCalled();
         $user->setEmailVerificationToken('1d7dbc5c3dbebe5c')->shouldBeCalled();
         $user->setEnabled(false)->shouldBeCalled();
+        $tokenStorage->setToken(null)->shouldBeCalled();
 
         $this->eraseVerification($event);
     }
@@ -92,7 +97,8 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         ShopUserInterface $user,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
+        TokenStorageInterface $tokenStorage,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -110,6 +116,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $tokenGenerator->generate()->shouldNotBeCalled();
         $user->setEmailVerificationToken(Argument::any())->shouldNotBeCalled();
         $user->setEnabled(false)->shouldNotBeCalled();
+        $tokenStorage->setToken(null)->shouldNotBeCalled();
 
         $this->eraseVerification($event);
     }
@@ -121,7 +128,8 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         CustomerInterface $customer,
         ShopUserInterface $user,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
+        TokenStorageInterface $tokenStorage,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -138,6 +146,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->setVerifiedAt(null)->shouldNotBeCalled();
         $user->setEmailVerificationToken(Argument::any())->shouldNotBeCalled();
         $user->setEnabled(false)->shouldNotBeCalled();
+        $tokenStorage->setToken(null)->shouldNotBeCalled();
 
         $this->eraseVerification($event);
     }
@@ -146,7 +155,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         GenericEvent $event,
         \stdClass $customer,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -160,7 +169,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         GenericEvent $event,
         CustomerInterface $customer,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -174,6 +183,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
     function it_sends_verification_email_and_adds_flash_if_user_verification_is_required(
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
+        RequestStack $requestStack,
         SessionInterface $session,
         GenericEvent $event,
         CustomerInterface $customer,
@@ -181,7 +191,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         FlashBagInterface $flashBag,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -195,6 +205,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->isVerified()->willReturn(false);
         $user->getEmailVerificationToken()->willReturn('1d7dbc5c3dbebe5c');
 
+        $requestStack->getSession()->willReturn($session);
         $session->getBag('flashes')->willReturn($flashBag);
         $flashBag->add('success', 'sylius.user.verify_email_request')->shouldBeCalled();
 
@@ -209,6 +220,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
     function it_does_not_send_email_if_user_is_still_enabled(
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
+        RequestStack $requestStack,
         SessionInterface $session,
         GenericEvent $event,
         CustomerInterface $customer,
@@ -216,7 +228,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         FlashBagInterface $flashBag,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -230,6 +242,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->isVerified()->willReturn(false);
         $user->getEmailVerificationToken()->willReturn('1d7dbc5c3dbebe5c');
 
+        $requestStack->getSession()->willReturn($session);
         $session->getBag('flashes')->shouldNotBeCalled();
         $flashBag->add(Argument::any())->shouldNotBeCalled();
 
@@ -244,6 +257,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
     function it_does_not_send_email_if_user_is_still_verified(
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
+        RequestStack $requestStack,
         SessionInterface $session,
         GenericEvent $event,
         CustomerInterface $customer,
@@ -251,7 +265,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         FlashBagInterface $flashBag,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -265,6 +279,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->isVerified()->willReturn(true);
         $user->getEmailVerificationToken()->willReturn('1d7dbc5c3dbebe5c');
 
+        $requestStack->getSession()->willReturn($session);
         $session->getBag('flashes')->shouldNotBeCalled();
         $flashBag->add(Argument::any())->shouldNotBeCalled();
 
@@ -279,6 +294,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
     function it_does_not_send_email_if_user_does_not_have_verification_token(
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
+        RequestStack $requestStack,
         SessionInterface $session,
         GenericEvent $event,
         CustomerInterface $customer,
@@ -286,7 +302,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         FlashBagInterface $flashBag,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -300,6 +316,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $user->isVerified()->willReturn(false);
         $user->getEmailVerificationToken()->willReturn(null);
 
+        $requestStack->getSession()->willReturn($session);
         $session->getBag('flashes')->shouldNotBeCalled();
         $flashBag->add(Argument::any())->shouldNotBeCalled();
 
@@ -314,6 +331,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
     function it_does_nothing_if_channel_does_not_require_verification(
         ChannelContextInterface $channelContext,
         EventDispatcherInterface $eventDispatcher,
+        RequestStack $requestStack,
         SessionInterface $session,
         GenericEvent $event,
         CustomerInterface $customer,
@@ -321,7 +339,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         FlashBagInterface $flashBag,
         ChannelInterface $channel,
         SectionProviderInterface $sectionResolver,
-        ShopSection $shopSection
+        ShopSection $shopSection,
     ): void {
         $sectionResolver->getSection()->willReturn($shopSection);
 
@@ -331,6 +349,7 @@ final class CustomerEmailUpdaterListenerSpec extends ObjectBehavior
         $event->getSubject()->willReturn($customer);
         $customer->getUser()->willReturn($user);
 
+        $requestStack->getSession()->shouldNotBeCalled();
         $session->getBag('flashes')->shouldNotBeCalled();
         $flashBag->add(Argument::any())->shouldNotBeCalled();
 

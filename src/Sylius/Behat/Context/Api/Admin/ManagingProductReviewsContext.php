@@ -16,26 +16,18 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Behat\Service\SharedStorageInterface;
 use Sylius\Component\Review\Model\ReviewInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingProductReviewsContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private SharedStorageInterface $sharedStorage;
-
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker,
-        SharedStorageInterface $sharedStorage
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private SharedStorageInterface $sharedStorage,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
-        $this->sharedStorage = $sharedStorage;
     }
 
     /**
@@ -43,7 +35,7 @@ final class ManagingProductReviewsContext implements Context
      */
     public function iWantToBrowseProductReviews(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::PRODUCT_REVIEWS);
     }
 
     /**
@@ -51,12 +43,12 @@ final class ManagingProductReviewsContext implements Context
      */
     public function iWantToModifyTheProductReview(ReviewInterface $productReview): void
     {
-        $this->client->buildUpdateRequest((string) $productReview->getId());
+        $this->client->buildUpdateRequest(Resources::PRODUCT_REVIEWS, (string) $productReview->getId());
     }
 
     /**
      * @When I change its title to :title
-     * @when I remove its title
+     * @When I remove its title
      */
     public function iChangeItsTitleTo(?string $title = ''): void
     {
@@ -65,19 +57,11 @@ final class ManagingProductReviewsContext implements Context
 
     /**
      * @When I change its comment to :comment
-     * @when I remove its comment
+     * @When I remove its comment
      */
     public function iChangeItsCommentTo(?string $comment = ''): void
     {
         $this->client->updateRequestData(['comment' => $comment]);
-    }
-
-    /**
-     * @When I (try to) save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
     }
 
     /**
@@ -93,7 +77,7 @@ final class ManagingProductReviewsContext implements Context
      */
     public function iChangeStateTheProductReview(string $state, ReviewInterface $productReview): void
     {
-        $this->client->applyTransition((string) $productReview->getId(), $state);
+        $this->client->applyTransition(Resources::PRODUCT_REVIEWS, (string) $productReview->getId(), $state);
     }
 
     /**
@@ -103,7 +87,7 @@ final class ManagingProductReviewsContext implements Context
     {
         $this->sharedStorage->set('product_review_id', $productReview->getId());
 
-        $this->client->delete((string) $productReview->getId());
+        $this->client->delete(Resources::PRODUCT_REVIEWS, (string) $productReview->getId());
     }
 
     /**
@@ -113,7 +97,7 @@ final class ManagingProductReviewsContext implements Context
     {
         Assert::true(
             $this->isItemOnIndex('title', $title),
-            sprintf('Product review with title %s does not exist', $title)
+            sprintf('Product review with title %s does not exist', $title),
         );
     }
 
@@ -166,7 +150,7 @@ final class ManagingProductReviewsContext implements Context
         $id = (string) $this->sharedStorage->get('product_review_id');
         Assert::false(
             $this->isItemOnIndex('id', $id),
-            sprintf('Product review with id %s exist', $id)
+            sprintf('Product review with id %s exist', $id),
         );
     }
 
@@ -177,7 +161,7 @@ final class ManagingProductReviewsContext implements Context
     {
         Assert::contains(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            sprintf('%s: Review %s should not be blank', $element, $element)
+            sprintf('%s: Review %s should not be blank', $element, $element),
         );
     }
 
@@ -198,38 +182,26 @@ final class ManagingProductReviewsContext implements Context
     }
 
     /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Product review could not be edited'
-        );
-    }
-
-    /**
      * @Then I should be notified that it has been successfully deleted
      */
     public function iShouldBeNotifiedThatItHasBeenSuccessfullyDeleted(): void
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful($this->client->getLastResponse()),
-            'Product review could not be deleted'
+            'Product review could not be deleted',
         );
     }
 
     private function isItemOnIndex(string $property, string $value): bool
     {
-        return $this->responseChecker->hasItemWithValue($this->client->index(), $property, $value);
+        return $this->responseChecker->hasItemWithValue($this->client->index(Resources::PRODUCT_REVIEWS), $property, $value);
     }
 
-    /** @param string|int $value */
-    private function assertIfReviewHasElementWithValue(ReviewInterface $productReview, string $element, $value): void
+    private function assertIfReviewHasElementWithValue(ReviewInterface $productReview, string $element, int|string $value): void
     {
         Assert::true(
-            $this->responseChecker->hasValue($this->client->show((string) $productReview->getId()), $element, $value),
-            sprintf('Product review %s is not %s', $element, $value)
+            $this->responseChecker->hasValue($this->client->show(Resources::PRODUCT_REVIEWS, (string) $productReview->getId()), $element, $value),
+            sprintf('Product review %s is not %s', $element, $value),
         );
     }
 }

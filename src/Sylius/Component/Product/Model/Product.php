@@ -33,9 +33,7 @@ class Product implements ProductInterface, \Stringable
     /** @var mixed */
     protected $id;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $code;
 
     /**
@@ -121,6 +119,11 @@ class Product implements ProductInterface, \Stringable
         $this->getTranslation()->setName($name);
     }
 
+    public function getDescriptor(): string
+    {
+        return trim(sprintf('%s (%s)', $this->getName(), $this->code));
+    }
+
     public function getSlug(): ?string
     {
         return $this->getTranslation()->getSlug();
@@ -169,7 +172,7 @@ class Product implements ProductInterface, \Stringable
     public function getAttributesByLocale(
         string $localeCode,
         string $fallbackLocaleCode,
-        ?string $baseLocaleCode = null
+        ?string $baseLocaleCode = null,
     ): Collection {
         if (null === $baseLocaleCode || $baseLocaleCode === $fallbackLocaleCode) {
             $baseLocaleCode = $fallbackLocaleCode;
@@ -179,7 +182,7 @@ class Product implements ProductInterface, \Stringable
         $attributes = $this->attributes->filter(
             function (ProductAttributeValueInterface $attribute) use ($baseLocaleCode) {
                 return $attribute->getLocaleCode() === $baseLocaleCode || null === $attribute->getLocaleCode();
-            }
+            },
         );
 
         $attributesWithFallback = [];
@@ -196,7 +199,7 @@ class Product implements ProductInterface, \Stringable
         Assert::isInstanceOf(
             $attribute,
             ProductAttributeValueInterface::class,
-            'Attribute objects added to a Product object have to implement ProductAttributeValueInterface'
+            'Attribute objects added to a Product object have to implement ProductAttributeValueInterface',
         );
 
         if (!$this->hasAttribute($attribute)) {
@@ -211,7 +214,7 @@ class Product implements ProductInterface, \Stringable
         Assert::isInstanceOf(
             $attribute,
             ProductAttributeValueInterface::class,
-            'Attribute objects removed from a Product object have to implement ProductAttributeValueInterface'
+            'Attribute objects removed from a Product object have to implement ProductAttributeValueInterface',
         );
 
         if ($this->hasAttribute($attribute)) {
@@ -227,23 +230,12 @@ class Product implements ProductInterface, \Stringable
 
     public function hasAttributeByCodeAndLocale(string $attributeCode, ?string $localeCode = null): bool
     {
-        $localeCode = $localeCode ?: $this->getTranslation()->getLocale();
-
-        foreach ($this->attributes as $attribute) {
-            if ($attribute->getAttribute()->getCode() === $attributeCode
-                && ($attribute->getLocaleCode() === $localeCode || null === $attribute->getLocaleCode())) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->getAttributeByCodeAndLocale($attributeCode, $localeCode) !== null;
     }
 
     public function getAttributeByCodeAndLocale(string $attributeCode, ?string $localeCode = null): ?AttributeValueInterface
     {
-        if (null === $localeCode) {
-            $localeCode = $this->getTranslation()->getLocale();
-        }
+        $localeCode = $localeCode ?: $this->getTranslation()->getLocale();
 
         foreach ($this->attributes as $attribute) {
             if ($attribute->getAttribute()->getCode() === $attributeCode &&
@@ -291,7 +283,7 @@ class Product implements ProductInterface, \Stringable
         return $this->variants->filter(
             function (ProductVariantInterface $productVariant) {
                 return $productVariant->isEnabled();
-            }
+            },
         );
     }
 
@@ -379,7 +371,7 @@ class Product implements ProductInterface, \Stringable
     protected function getAttributeInDifferentLocale(
         ProductAttributeValueInterface $attributeValue,
         string $localeCode,
-        ?string $fallbackLocaleCode = null
+        ?string $fallbackLocaleCode = null,
     ): AttributeValueInterface {
         if (!$this->hasNotEmptyAttributeByCodeAndLocale($attributeValue->getCode(), $localeCode)) {
             if (

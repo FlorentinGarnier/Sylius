@@ -22,16 +22,10 @@ use Webmozart\Assert\Assert;
 
 final class ProductReviewContext implements Context
 {
-    private CreatePageInterface $createPage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
     public function __construct(
-        CreatePageInterface $createPage,
-        NotificationCheckerInterface $notificationChecker
+        private CreatePageInterface $createPage,
+        private NotificationCheckerInterface $notificationChecker,
     ) {
-        $this->createPage = $createPage;
-        $this->notificationChecker = $notificationChecker;
     }
 
     /**
@@ -98,7 +92,7 @@ final class ProductReviewContext implements Context
     {
         $this->notificationChecker->checkNotification(
             'Your review is waiting for the acceptation.',
-            NotificationType::success()
+            NotificationType::success(),
         );
     }
 
@@ -157,7 +151,7 @@ final class ProductReviewContext implements Context
     {
         Assert::same(
             $this->createPage->getAuthorValidationMessage(),
-            'This email is already registered, please login or use forgotten password.'
+            'This email is already registered, please login or use forgotten password.',
         );
     }
 

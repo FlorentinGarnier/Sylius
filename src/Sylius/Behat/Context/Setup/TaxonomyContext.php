@@ -28,49 +28,16 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class TaxonomyContext implements Context
 {
-    private RepositoryInterface $taxonRepository;
-
-    private FactoryInterface $taxonFactory;
-
-    private FactoryInterface $taxonTranslationFactory;
-
-    private FactoryInterface $taxonImageFactory;
-
-    private ObjectManager $objectManager;
-
-    private ImageUploaderInterface $imageUploader;
-
-    private TaxonSlugGeneratorInterface $taxonSlugGenerator;
-
-    /** @var array */
-    private $minkParameters;
-
     public function __construct(
-        RepositoryInterface $taxonRepository,
-        FactoryInterface $taxonFactory,
-        FactoryInterface $taxonTranslationFactory,
-        FactoryInterface $taxonImageFactory,
-        ObjectManager $objectManager,
-        ImageUploaderInterface $imageUploader,
-        TaxonSlugGeneratorInterface $taxonSlugGenerator,
-        $minkParameters
+        private RepositoryInterface $taxonRepository,
+        private FactoryInterface $taxonFactory,
+        private FactoryInterface $taxonTranslationFactory,
+        private FactoryInterface $taxonImageFactory,
+        private ObjectManager $objectManager,
+        private ImageUploaderInterface $imageUploader,
+        private TaxonSlugGeneratorInterface $taxonSlugGenerator,
+        private \ArrayAccess $minkParameters,
     ) {
-        if (!is_array($minkParameters) && !$minkParameters instanceof \ArrayAccess) {
-            throw new \InvalidArgumentException(sprintf(
-                '"$minkParameters" passed to "%s" has to be an array or implement "%s".',
-                self::class,
-                \ArrayAccess::class
-            ));
-        }
-
-        $this->taxonRepository = $taxonRepository;
-        $this->taxonFactory = $taxonFactory;
-        $this->taxonTranslationFactory = $taxonTranslationFactory;
-        $this->taxonImageFactory = $taxonImageFactory;
-        $this->objectManager = $objectManager;
-        $this->imageUploader = $imageUploader;
-        $this->taxonSlugGenerator = $taxonSlugGenerator;
-        $this->minkParameters = $minkParameters;
     }
 
     /**

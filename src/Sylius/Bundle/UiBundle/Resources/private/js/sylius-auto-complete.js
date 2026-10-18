@@ -25,6 +25,7 @@ $.fn.extend({
           search: 250,
         },
         forceSelection: false,
+        saveRemoteData: false,
         apiSettings: {
           dataType: 'JSON',
           cache: false,
@@ -40,10 +41,12 @@ $.fn.extend({
               value: item[choiceValue],
             }));
 
-            results.unshift({
-              name: '&nbsp;',
-              value: '',
-            });
+            if (!element.hasClass('multiple')) {
+              results.unshift({
+                name: '&nbsp;',
+                value: '',
+              });
+            }
 
             return {
               success: true,

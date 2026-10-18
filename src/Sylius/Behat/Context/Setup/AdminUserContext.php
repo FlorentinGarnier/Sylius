@@ -25,32 +25,14 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class AdminUserContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private ExampleFactoryInterface $userFactory;
-
-    private UserRepositoryInterface $userRepository;
-
-    private ImageUploaderInterface $imageUploader;
-
-    private ObjectManager $objectManager;
-
-    private \ArrayAccess $minkParameters;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        ExampleFactoryInterface $userFactory,
-        UserRepositoryInterface $userRepository,
-        ImageUploaderInterface $imageUploader,
-        ObjectManager $objectManager,
-        \ArrayAccess $minkParameters
+        private SharedStorageInterface $sharedStorage,
+        private ExampleFactoryInterface $userFactory,
+        private UserRepositoryInterface $userRepository,
+        private ImageUploaderInterface $imageUploader,
+        private ObjectManager $objectManager,
+        private \ArrayAccess $minkParameters,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->userFactory = $userFactory;
-        $this->userRepository = $userRepository;
-        $this->imageUploader = $imageUploader;
-        $this->objectManager = $objectManager;
-        $this->minkParameters = $minkParameters;
     }
 
     /**
@@ -88,6 +70,17 @@ final class AdminUserContext implements Context
     }
 
     /**
+     * @Given /^(this administrator) account is disabled$/
+     * @When /^(this administrator) account becomes disabled$/
+     */
+    public function thisAccountIsDisabled(AdminUserInterface $administrator): void
+    {
+        $administrator->setEnabled(false);
+
+        $this->objectManager->flush();
+    }
+
+    /**
      * @Given /^(this administrator) is using ("[^"]+" locale)$/
      * @Given /^(I) am using ("[^"]+" locale) for my panel$/
      */
@@ -115,5 +108,26 @@ final class AdminUserContext implements Context
         $this->objectManager->flush();
 
         $this->sharedStorage->set($avatarPath, $avatar->getPath());
+    }
+
+    /**
+     * @Given /^(I) have already received an administrator's password resetting email$/
+     */
+    public function iHaveAlreadyReceivedAnAdministratorsPasswordResettingEmail(AdminUserInterface $administrator): void
+    {
+        $administrator->setPasswordResetToken('token');
+        $administrator->setPasswordRequestedAt(new \DateTime());
+
+        $this->objectManager->flush();
+    }
+
+    /**
+     * @Given /^(my) password reset token has already expired$/
+     */
+    public function myPasswordResetTokenHasAlreadyExpired(AdminUserInterface $administrator): void
+    {
+        $administrator->setPasswordRequestedAt(new \DateTime('-1 year'));
+
+        $this->objectManager->flush();
     }
 }

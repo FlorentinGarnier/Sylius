@@ -13,13 +13,12 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Shop\Checkout;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ElementNotFoundException;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\Mink\Session;
-use DMore\ChromeDriver\ChromeDriver;
 use FriendsOfBehat\PageObjectExtension\Page\SymfonyPage;
+use Sylius\Behat\Service\DriverHelper;
 use Sylius\Behat\Service\JQueryHelper;
 use Sylius\Component\Core\Factory\AddressFactoryInterface;
 use Sylius\Component\Core\Model\AddressInterface;
@@ -32,17 +31,13 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
     public const TYPE_SHIPPING = 'shipping';
 
-    private AddressFactoryInterface $addressFactory;
-
     public function __construct(
         Session $session,
         $minkParameters,
         RouterInterface $router,
-        AddressFactoryInterface $addressFactory
+        private AddressFactoryInterface $addressFactory,
     ) {
         parent::__construct($session, $minkParameters, $router);
-
-        $this->addressFactory = $addressFactory;
     }
 
     public function getRouteName(): string
@@ -52,20 +47,12 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
     public function chooseDifferentShippingAddress(): void
     {
-        $driver = $this->getDriver();
-        if ($driver instanceof Selenium2Driver || $driver instanceof ChromeDriver) {
-            $this->getElement('different_shipping_address_label')->click();
+        $this->chooseDifferentAddress('shipping');
+    }
 
-            return;
-        }
-
-        $billingAddressSwitch = $this->getElement('different_shipping_address');
-        Assert::false(
-            $billingAddressSwitch->isChecked(),
-            'Previous state of different billing address switch was true expected to be false'
-        );
-
-        $billingAddressSwitch->check();
+    public function chooseDifferentBillingAddress(): void
+    {
+        $this->chooseDifferentAddress('billing');
     }
 
     public function isDifferentShippingAddressChecked(): bool
@@ -77,7 +64,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
     {
         try {
             return $this->getElement('shipping_address')->isVisible();
-        } catch (UnsupportedDriverActionException $e) {
+        } catch (UnsupportedDriverActionException) {
             // it's visible by default and is being hidden with JS
             return true;
         }
@@ -89,7 +76,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
         $validationElement = $this->getDocument()->waitFor(3, function (): ?NodeElement {
             try {
                 $validationElement = $this->getElement('login_validation_error');
-            } catch (ElementNotFoundException $elementNotFoundException) {
+            } catch (ElementNotFoundException) {
                 return null;
             }
 
@@ -160,7 +147,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
         try {
             $this->getElement('login_button')->press();
-        } catch (ElementNotFoundException $elementNotFoundException) {
+        } catch (ElementNotFoundException) {
             $this->getElement('login_button')->click();
         }
 
@@ -169,9 +156,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
     public function specifyPassword(string $password): void
     {
-        $this->getDocument()->waitFor(5, function () {
-            return $this->getElement('login_password')->isVisible();
-        });
+        $this->getDocument()->waitFor(5, fn () => $this->getElement('login_password')->isVisible());
 
         $this->getElement('login_password')->setValue($password);
     }
@@ -233,9 +218,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
         $addressBookSelect = $this->getElement('shipping_address_book');
 
         $addressBookSelect->click();
-        $addressOption = $addressBookSelect->waitFor(5, function () use ($address, $addressBookSelect) {
-            return $addressBookSelect->find('css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId()));
-        });
+        $addressOption = $addressBookSelect->waitFor(5, fn () => $addressBookSelect->find('css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId())));
 
         if (null === $addressOption) {
             throw new ElementNotFoundException($this->getDriver(), 'option', 'css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId()));
@@ -250,9 +233,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
         $addressBookSelect = $this->getElement('billing_address_book');
 
         $addressBookSelect->click();
-        $addressOption = $addressBookSelect->waitFor(5, function () use ($address, $addressBookSelect) {
-            return $addressBookSelect->find('css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId()));
-        });
+        $addressOption = $addressBookSelect->waitFor(5, fn () => $addressBookSelect->find('css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId())));
 
         if (null === $addressOption) {
             throw new ElementNotFoundException($this->getDriver(), 'option', 'css', sprintf('[data-test-address-book-item][data-id="%s"]', $address->getId()));
@@ -325,8 +306,8 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
     {
         return array_map(
             /** @return string[] */
-            static function (NodeElement $element): string { return $element->getText(); },
-            $element->findAll('css', 'option[value!=""]')
+            static fn (NodeElement $element): string => $element->getText(),
+            $element->findAll('css', 'option[value!=""]'),
         );
     }
 
@@ -347,7 +328,7 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
         try {
             $address->setProvinceName($this->getElement(sprintf('%s_province', $type))->getValue());
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             $address->setProvinceCode($this->getElement(sprintf('%s_country_province', $type))->getValue());
         }
 
@@ -389,16 +370,12 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
 
     private function waitForLoginAction(): bool
     {
-        return $this->getDocument()->waitFor(5, function () {
-            return !$this->hasElement('login_password');
-        });
+        return $this->getDocument()->waitFor(5, fn () => !$this->hasElement('login_password'));
     }
 
     private function waitForElement(int $timeout, string $elementName): bool
     {
-        return $this->getDocument()->waitFor($timeout, function () use ($elementName) {
-            return $this->hasElement($elementName);
-        });
+        return $this->getDocument()->waitFor($timeout, fn () => $this->hasElement($elementName));
     }
 
     private function assertAddressType(string $type): void
@@ -406,5 +383,16 @@ class AddressPage extends SymfonyPage implements AddressPageInterface
         $availableTypes = [self::TYPE_BILLING, self::TYPE_SHIPPING];
 
         Assert::oneOf($type, $availableTypes, sprintf('There are only two available types %s, %s. %s given', self::TYPE_BILLING, self::TYPE_SHIPPING, $type));
+    }
+
+    private function chooseDifferentAddress(string $type): void
+    {
+        if (DriverHelper::isJavascript($this->getDriver())) {
+            $this->getElement(sprintf('different_%s_address_label', $type))->click();
+
+            return;
+        }
+
+        $this->getElement(sprintf('different_%s_address', $type))->check();
     }
 }

@@ -103,6 +103,25 @@ final class ProductFixtureTest extends TestCase
     public function product_channels_are_optional(): void
     {
         $this->assertConfigurationIsValid([['custom' => [['channels' => ['CHN-1', 'CHN-2']]]]], 'custom.*.channels');
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => []]]]],
+            ['custom' => [['channels' => []]]],
+            'custom.*.channels',
+        );
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => null]]]],
+            ['custom' => [[]]],
+            'custom.*.channels',
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function product_variant_selection_method_is_optional(): void
+    {
+        $this->assertConfigurationIsValid([['custom' => [['variant_selection_method' => 'custom']]]], 'custom.*.variant_selection_method');
+        $this->assertConfigurationIsValid([['custom' => [['variant_selection_method' => 'match']]]], 'custom.*.variant_selection_method');
     }
 
     /**
@@ -141,7 +160,7 @@ final class ProductFixtureTest extends TestCase
     {
         return new ProductFixture(
             $this->getMockBuilder(ObjectManager::class)->getMock(),
-            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock()
+            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock(),
         );
     }
 }

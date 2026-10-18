@@ -18,6 +18,7 @@ use PhpSpec\ObjectBehavior;
 use Sylius\Component\Addressing\Model\ZoneInterface;
 use Sylius\Component\Channel\Model\Channel as BaseChannel;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\ChannelPriceHistoryConfigInterface;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Sylius\Component\Currency\Model\CurrencyInterface;
 use Sylius\Component\Locale\Model\LocaleInterface;
@@ -172,9 +173,26 @@ final class ChannelSpec extends ObjectBehavior
         $this->isAccountVerificationRequired()->shouldReturn(false);
     }
 
+    function it_does_not_have_shipping_address_in_checkout_required_by_default(): void
+    {
+        $this->isShippingAddressInCheckoutRequired()->shouldReturn(false);
+    }
+
+    function it_can_set_shipping_address_in_checkout_required(): void
+    {
+        $this->setShippingAddressInCheckoutRequired(true);
+        $this->isShippingAddressInCheckoutRequired()->shouldReturn(true);
+    }
+
     function its_menu_taxon_is_mutable(TaxonInterface $taxon): void
     {
         $this->setMenuTaxon($taxon);
         $this->getMenuTaxon()->shouldReturn($taxon);
+    }
+
+    function its_price_history_config_is_mutable(ChannelPriceHistoryConfigInterface $config): void
+    {
+        $this->setChannelPriceHistoryConfig($config);
+        $this->getChannelPriceHistoryConfig()->shouldReturn($config);
     }
 }

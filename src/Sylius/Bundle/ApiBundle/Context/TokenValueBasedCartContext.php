@@ -26,7 +26,7 @@ final class TokenValueBasedCartContext implements CartContextInterface
     public function __construct(
         private RequestStack $requestStack,
         private OrderRepositoryInterface $orderRepository,
-        private string $newApiRoute
+        private string $newApiRoute,
     ) {
     }
 
@@ -50,11 +50,7 @@ final class TokenValueBasedCartContext implements CartContextInterface
 
     private function getMainRequest(): Request
     {
-        if (\method_exists($this->requestStack, 'getMainRequest')) {
-            $mainRequest = $this->requestStack->getMainRequest();
-        } else {
-            $mainRequest = $this->requestStack->getMasterRequest();
-        }
+        $mainRequest = $this->requestStack->getMainRequest();
         if (null === $mainRequest) {
             throw new CartNotFoundException('There is no main request on request stack.');
         }

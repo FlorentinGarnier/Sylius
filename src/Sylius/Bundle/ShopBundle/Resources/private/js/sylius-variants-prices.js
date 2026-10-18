@@ -15,9 +15,12 @@ function formatAppliedPromotions(appliedPromotions) {
 
   if (appliedPromotions !== '[]') {
     $.each(appliedPromotions, (index, promotion) => {
-      let promotionInfo = promotion.label;
-      promotionInfo += promotion.description ? ` - ${promotion.description}` : '';
-      appliedPromotionsElement += `<div class="ui blue label promotion_label" style="margin: 1rem 0;"><div class="row ui small sylius_catalog_promotion">${promotionInfo}</div></div>`;
+      appliedPromotionsElement += `<div style="margin-top: 20px;">
+        <div class="ui label promotion_label">
+          <div class="row ui small sylius_catalog_promotion">${promotion.label}</div>
+        </div>
+        <span class="text-teal">${promotion.description}</span>
+      </div>`;
     });
     $('#appliedPromotions').html(appliedPromotionsElement);
   }
@@ -55,6 +58,16 @@ const handleProductOptionsChange = function handleProductOptionsChange() {
       $('#product-price').text($('#sylius-variants-pricing').attr('data-unavailable-text'));
       $('button[type=submit]').attr('disabled', 'disabled');
     }
+
+    const lowestPriceBeforeDiscount = $('#sylius-variants-pricing').find(selector).attr('data-lowest-price-before-discount');
+
+    if (lowestPriceBeforeDiscount !== undefined) {
+      $('#lowest-price-before-discount')
+        .html(lowestPriceBeforeDiscount)
+        .css({ 'white-space': 'nowrap', display: 'inline' });
+    } else {
+      $('#lowest-price-before-discount').css('display', 'none');
+    }
   });
 };
 
@@ -75,6 +88,16 @@ const handleProductVariantsChange = function handleProductVariantsChange() {
       $('#product-original-price').css('display', 'inline').html(`<del>${originalPrice}</del>`);
     } else {
       $('#product-original-price').css('display', 'none');
+    }
+
+    const lowestPriceBeforeDiscount = priceRow.attr('data-lowest-price-before-discount');
+
+    if (lowestPriceBeforeDiscount !== undefined) {
+      $('#lowest-price-before-discount')
+        .html(lowestPriceBeforeDiscount)
+        .css({ 'white-space': 'nowrap', display: 'inline' });
+    } else {
+      $('#lowest-price-before-discount').css('display', 'none');
     }
   });
 };

@@ -25,6 +25,8 @@ interface OrderRepositoryInterface extends BaseOrderRepositoryInterface
 {
     public function createListQueryBuilder(): QueryBuilder;
 
+    public function createSearchListQueryBuilder(): QueryBuilder;
+
     public function createByCustomerIdQueryBuilder($customerId): QueryBuilder;
 
     public function createByCustomerAndChannelIdQueryBuilder($customerId, $channelId): QueryBuilder;
@@ -32,6 +34,8 @@ interface OrderRepositoryInterface extends BaseOrderRepositoryInterface
     public function countByCustomerAndCoupon(CustomerInterface $customer, PromotionCouponInterface $coupon): int;
 
     public function countByCustomer(CustomerInterface $customer): int;
+
+    public function findOrderById($id): ?OrderInterface;
 
     /**
      * @return array|OrderInterface[]
@@ -73,7 +77,7 @@ interface OrderRepositoryInterface extends BaseOrderRepositoryInterface
     /**
      * @return array|OrderInterface[]
      */
-    public function findOrdersUnpaidSince(\DateTimeInterface $terminalDate): array;
+    public function findOrdersUnpaidSince(\DateTimeInterface $terminalDate, ?int $limit = null): array;
 
     public function findCartForSummary($id): ?OrderInterface;
 

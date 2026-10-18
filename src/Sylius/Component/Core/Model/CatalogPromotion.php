@@ -41,6 +41,7 @@ class CatalogPromotion extends BaseCatalogPromotion implements CatalogPromotionI
      */
     public function getChannels(): Collection
     {
+        /** @phpstan-ignore-next-line */
         return $this->channels;
     }
 

@@ -23,20 +23,11 @@ use Webmozart\Assert\Assert;
 
 final class ManagingProductReviewsContext implements Context
 {
-    private IndexPageInterface $indexPage;
-
-    private UpdatePageInterface $updatePage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
     public function __construct(
-        IndexPageInterface $indexPage,
-        UpdatePageInterface $updatePage,
-        NotificationCheckerInterface $notificationChecker
+        private IndexPageInterface $indexPage,
+        private UpdatePageInterface $updatePage,
+        private NotificationCheckerInterface $notificationChecker,
     ) {
-        $this->indexPage = $indexPage;
-        $this->updatePage = $updatePage;
-        $this->notificationChecker = $notificationChecker;
     }
 
     /**
@@ -54,6 +45,22 @@ final class ManagingProductReviewsContext implements Context
     public function iCheckTheProductReview(string $productReviewTitle): void
     {
         $this->indexPage->checkResourceOnPage(['title' => $productReviewTitle]);
+    }
+
+    /**
+     * @When I choose :state as a status filter
+     */
+    public function iChooseStateAsStatusFilter(string $state): void
+    {
+        $this->indexPage->chooseState($state);
+    }
+
+    /**
+     * @When I filter
+     */
+    public function iFilter(): void
+    {
+        $this->indexPage->filter();
     }
 
     /**
@@ -190,7 +197,7 @@ final class ManagingProductReviewsContext implements Context
     {
         $this->notificationChecker->checkNotification(
             sprintf('Review has been successfully %s.', $action),
-            NotificationType::success()
+            NotificationType::success(),
         );
     }
 

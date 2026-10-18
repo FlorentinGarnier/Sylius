@@ -26,32 +26,14 @@ use Webmozart\Assert\Assert;
 
 final class CheckoutAddressingContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private AddressPageInterface $addressPage;
-
-    private FactoryInterface $addressFactory;
-
-    private AddressComparatorInterface $addressComparator;
-
-    private SelectShippingPageInterface $selectShippingPage;
-
-    private JavaScriptTestHelperInterface $testHelper;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        AddressPageInterface $addressPage,
-        FactoryInterface $addressFactory,
-        AddressComparatorInterface $addressComparator,
-        SelectShippingPageInterface $selectShippingPage,
-        JavaScriptTestHelperInterface $testHelper
+        private SharedStorageInterface $sharedStorage,
+        private AddressPageInterface $addressPage,
+        private FactoryInterface $addressFactory,
+        private AddressComparatorInterface $addressComparator,
+        private SelectShippingPageInterface $selectShippingPage,
+        private JavaScriptTestHelperInterface $testHelper,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->addressPage = $addressPage;
-        $this->addressFactory = $addressFactory;
-        $this->addressComparator = $addressComparator;
-        $this->selectShippingPage = $selectShippingPage;
-        $this->testHelper = $testHelper;
     }
 
     /**
@@ -150,9 +132,25 @@ final class CheckoutAddressingContext implements Context
         $key = sprintf(
             'shipping_address_%s_%s',
             strtolower((string) $address->getFirstName()),
-            strtolower((string) $address->getLastName())
+            strtolower((string) $address->getLastName()),
         );
         $this->sharedStorage->set($key, $address);
+
+        $this->addressPage->specifyShippingAddress($address);
+    }
+
+    /**
+     * @When /^I specify the required shipping (address as "[^"]+", "[^"]+", "[^"]+", "[^"]+" for "[^"]+")$/
+     */
+    public function iSpecifyTheRequiredShippingAddressAs(AddressInterface $address): void
+    {
+        $key = sprintf(
+            'shipping_address_%s_%s',
+            strtolower((string) $address->getFirstName()),
+            strtolower((string) $address->getLastName()),
+        );
+        $this->sharedStorage->set($key, $address);
+        $this->sharedStorage->set(str_replace('shipping', 'billing', $key), $address);
 
         $this->addressPage->specifyShippingAddress($address);
     }
@@ -183,7 +181,7 @@ final class CheckoutAddressingContext implements Context
         $key = sprintf(
             'billing_address_%s_%s',
             strtolower((string) $address->getFirstName()),
-            strtolower((string) $address->getLastName())
+            strtolower((string) $address->getLastName()),
         );
         $this->sharedStorage->set($key, $address);
 
@@ -191,6 +189,17 @@ final class CheckoutAddressingContext implements Context
     }
 
     /**
+     * @When /^I specify different billing (address as "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)" for "([^"]+)")$/
+     */
+    public function iSpecifyDifferentBillingAddressAs(AddressInterface $address): void
+    {
+        $this->addressPage->chooseDifferentShippingAddress();
+
+        $this->iSpecifyTheBillingAddressAs($address);
+    }
+
+    /**
+     * @Given /^I have specified the billing (address as "([^"]+)", "([^"]+)", "([^"]+)", "([^"]+)" for "([^"]+)")$/
      * @When I specified the billing address
      * @When /^I specified the billing (address as "[^"]+", "[^"]+", "[^"]+", "[^"]+" for "[^"]+")$/
      * @When /^I define the billing (address as "[^"]+", "[^"]+", "[^"]+", "[^"]+" for "[^"]+")$/
@@ -250,7 +259,7 @@ final class CheckoutAddressingContext implements Context
     public function iProceedSelectingBillingCountry(
         CountryInterface $shippingCountry = null,
         string $localeCode = 'en_US',
-        ?string $email = null
+        ?string $email = null,
     ) {
         $this->addressPage->open(['_locale' => $localeCode]);
         $shippingAddress = $this->createDefaultAddress();
@@ -269,7 +278,7 @@ final class CheckoutAddressingContext implements Context
      */
     public function iProceedLoggingAsGuestWithAsBillingCountry(
         string $email,
-        CountryInterface $shippingCountry = null
+        CountryInterface $shippingCountry = null,
     ): void {
         $this->addressPage->open();
         $this->addressPage->specifyEmail($email);

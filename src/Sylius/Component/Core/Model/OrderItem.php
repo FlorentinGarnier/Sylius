@@ -15,28 +15,21 @@ namespace Sylius\Component\Core\Model;
 
 use Sylius\Component\Order\Model\OrderItem as BaseOrderItem;
 use Sylius\Component\Order\Model\OrderItemInterface as BaseOrderItemInterface;
+use Sylius\Component\Order\Model\OrderItemUnitInterface as BaseOrderItemUnitInterface;
 use Webmozart\Assert\Assert;
 
 class OrderItem extends BaseOrderItem implements OrderItemInterface
 {
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $version = 1;
 
-    /**
-     * @var ProductVariantInterface|null
-     */
+    /** @var ProductVariantInterface|null */
     protected $variant;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $productName;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $variantName;
 
     public function getVersion(): ?int
@@ -61,7 +54,10 @@ class OrderItem extends BaseOrderItem implements OrderItemInterface
 
     public function getProduct(): ?ProductInterface
     {
-        return $this->variant->getProduct();
+        $product = $this->variant->getProduct();
+        Assert::nullOrIsInstanceOf($product, ProductInterface::class);
+
+        return $product;
     }
 
     public function getProductName(): ?string
@@ -150,6 +146,10 @@ class OrderItem extends BaseOrderItem implements OrderItemInterface
 
     public function getSubtotal(): int
     {
-        return $this->getDiscountedUnitPrice() * $this->quantity;
+        return array_reduce(
+            $this->getUnits()->toArray(),
+            fn (int $subtotal, BaseOrderItemUnitInterface $unit) => $subtotal + $this->unitPrice + $unit->getAdjustmentsTotal(AdjustmentInterface::ORDER_UNIT_PROMOTION_ADJUSTMENT),
+            0,
+        );
     }
 }

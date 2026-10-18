@@ -1,3 +1,53 @@
+# UPGRADE FROM `v1.11.11` TO `v1.11.12`
+
+1. All entities and their relationships have a default order by identifier if no order is specified. You can disable
+this behavior by setting the `sylius_core.order_by_identifier` parameter to `false`:
+```yaml
+sylius_core:
+    order_by_identifier: false
+```
+
+# UPGRADE FROM `v1.11.7` TO `v1.11.8`
+
+1. Cloning `Sylius\Component\Order\Model\Adjustment` resets values of fields `id`, `createdAt` and `updatedAt`.
+
+# UPGRADE FROM `v1.11.6` TO `v1.11.7`
+
+1. Method `Sylius\Component\Channel\Repository\ChannelRepository::findOneByHostname` has become deprecated, use
+`Sylius\Component\Channel\Repository\ChannelRepository::findOneEnabledByHostname` instead. Simultaneously with this change
+`Sylius\Component\Channel\Context\RequestBased\HostnameBasedRequestResolver::findChannel` will start selecting only a channel from a range
+of enabled channels.
+
+2. The `code` field was removed from OrderItem serialization (in `src/Sylius/Bundle/ApiBundle/Resources/config/serialization/OrderItem.xml`)
+as such field does not exist. Please, add it in your code base if you need it.
+
+# UPGRADE FROM `v1.11.2` TO `v1.11.3`
+
+1. Order Processors' priorities have changed and `sylius.order_processing.order_prices_recalculator` has now a higher priority than `sylius.order_processing.order_shipment_processor`.
+
+Previous priorities:
+```shell
+sylius.order_processing.order_adjustments_clearer          60         Sylius\Component\Core\OrderProcessing\OrderAdjustmentsClearer
+sylius.order_processing.order_shipment_processor           50         Sylius\Component\Core\OrderProcessing\OrderShipmentProcessor
+sylius.order_processing.order_prices_recalculator          40         Sylius\Component\Core\OrderProcessing\OrderPricesRecalculator
+...
+```
+
+Current priorities:
+```shell
+sylius.order_processing.order_adjustments_clearer          60         Sylius\Component\Core\OrderProcessing\OrderAdjustmentsClearer
+sylius.order_processing.order_prices_recalculator          50         Sylius\Component\Core\OrderProcessing\OrderPricesRecalculator
+sylius.order_processing.order_shipment_processor           40         Sylius\Component\Core\OrderProcessing\OrderShipmentProcessor
+...
+```
+
+If you rely on previous priorities, you can bring them back by setting flag ``sylius_core.process_shipments_before_recalculating_prices`` to ``true`` in ``config/packages/_sylius.yaml``:
+```yaml
+sylius_core:
+    process_shipments_before_recalculating_prices: true
+```
+However, it is not recommended because new priorities fix [invalid estimated shipping costs](https://github.com/Sylius/Sylius/pull/13769).
+
 # UPGRADE FROM `v1.10.X` TO `v1.11.0`
 
 ## Preconditions
@@ -115,7 +165,7 @@ We've introduced promoted properties all over the code where it was possible. Pl
 - `Sylius\Bundle\ShopBundle\Controller\SecurityWidgetController`
 - `Sylius\Bundle\UiBundle\Controller\SecurityController`
 
-In all of them constructor argument `$templatingEngine`, previously typed as `object` was changed to `EngineInterface|Environment`.
+In all of them constructor argument `$templatingEngine`, previously typed as `object` was changed to `Environment`.
 It should not cause any problems (only such services would work in these controllers), but is theoretically making the type
 requirement stricter.
 
@@ -126,6 +176,11 @@ This means that your form type extensions, including autowired ones, may now con
 stock form type extensions without you having to explicitly specify their priorities. However, if you relied on the old
 default values, you might have to review priorities of your own form type extensions, as well as any that you have overridden.
 Please note that **unlike state machine callbacks**, form extension priorities are being executed in descending order. 
+
+#### Channel pricing view
+
+All form fields are now hardcoded into the `AdminBundle/Resources/views/ProductVariant/Tab/_channelPricings.html.twig` view.
+If you have custom properties which were previously rendered automatically you now have to override this view in `templates/bundles/SyliusAdminBundle/ProductVariant/Tab/_channelPricings.html.twig`.
 
 ### API v2
 

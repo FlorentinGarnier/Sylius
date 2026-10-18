@@ -25,36 +25,17 @@ use Webmozart\Assert\Assert;
 
 final class ManagingCustomersContext implements Context
 {
-    /** @var CustomerIndexPageInterface */
-    private $indexPage;
-
-    private CreatePageInterface $createPage;
-
-    private UpdatePageInterface $updatePage;
-
-    private ShowPageInterface $showPage;
-
-    private \Sylius\Behat\Page\Admin\Crud\IndexPageInterface $ordersIndexPage;
-
-    private CurrentPageResolverInterface $currentPageResolver;
-
     /**
      * @param CustomerIndexPageInterface $indexPage
      */
     public function __construct(
-        CreatePageInterface $createPage,
-        IndexPageInterface $indexPage,
-        UpdatePageInterface $updatePage,
-        ShowPageInterface $showPage,
-        IndexPageInterface $ordersIndexPage,
-        CurrentPageResolverInterface $currentPageResolver
+        private CreatePageInterface $createPage,
+        private IndexPageInterface $indexPage,
+        private UpdatePageInterface $updatePage,
+        private ShowPageInterface $showPage,
+        private IndexPageInterface $ordersIndexPage,
+        private CurrentPageResolverInterface $currentPageResolver,
     ) {
-        $this->createPage = $createPage;
-        $this->indexPage = $indexPage;
-        $this->updatePage = $updatePage;
-        $this->showPage = $showPage;
-        $this->ordersIndexPage = $ordersIndexPage;
-        $this->currentPageResolver = $currentPageResolver;
     }
 
     /**
@@ -107,6 +88,19 @@ final class ManagingCustomersContext implements Context
     public function iAddIt()
     {
         $this->createPage->create();
+    }
+
+    /**
+     * @When I filter by group :groupName
+     * @When I filter by groups :firstGroup and :secondGroup
+     */
+    public function iFilterByGroup(string ...$groupsNames): void
+    {
+        foreach ($groupsNames as $groupName) {
+            $this->indexPage->specifyFilterGroup($groupName);
+        }
+
+        $this->indexPage->filter();
     }
 
     /**
@@ -199,8 +193,9 @@ final class ManagingCustomersContext implements Context
 
     /**
      * @Then /^I should see (\d+) customers in the list$/
+     * @Then /^I should see a single customer on the list$/
      */
-    public function iShouldSeeCustomersInTheList($amountOfCustomers)
+    public function iShouldSeeCustomersInTheList($amountOfCustomers = 1)
     {
         Assert::same($this->indexPage->countItems(), (int) $amountOfCustomers);
     }
@@ -220,7 +215,7 @@ final class ManagingCustomersContext implements Context
     {
         Assert::same(
             $this->createPage->getValidationMessage($elementName),
-            sprintf('Please enter your %s.', $elementName)
+            sprintf('Please enter your %s.', $elementName),
         );
     }
 
@@ -231,7 +226,7 @@ final class ManagingCustomersContext implements Context
     {
         Assert::same(
             $this->updatePage->getValidationMessage($elementName),
-            sprintf('%s must be %s.', ucfirst($elementName), $validationMessage)
+            sprintf('%s must be %s.', ucfirst($elementName), $validationMessage),
         );
     }
 
@@ -395,7 +390,7 @@ final class ManagingCustomersContext implements Context
     {
         Assert::notNull(
             $customer->getUser()->getPassword(),
-            'Customer should have an account, but they do not.'
+            'Customer should have an account, but they do not.',
         );
     }
 
@@ -620,7 +615,7 @@ final class ManagingCustomersContext implements Context
     {
         Assert::same(
             $this->createPage->getValidationMessage('password'),
-            sprintf('Password must be at least %d characters long.', $amountOfCharacters)
+            sprintf('Password must be at least %d characters long.', $amountOfCharacters),
         );
     }
 

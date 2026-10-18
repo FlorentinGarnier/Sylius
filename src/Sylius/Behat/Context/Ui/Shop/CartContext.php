@@ -15,43 +15,36 @@ namespace Sylius\Behat\Context\Ui\Shop;
 
 use Behat\Behat\Context\Context;
 use Behat\Mink\Exception\ElementNotFoundException;
+use Sylius\Behat\Element\Shop\CartWidgetElementInterface;
+use Sylius\Behat\Element\Shop\CheckoutSubtotalElementInterface;
 use Sylius\Behat\NotificationType;
 use Sylius\Behat\Page\Shop\Cart\SummaryPageInterface;
+use Sylius\Behat\Page\Shop\Checkout\AddressPageInterface;
 use Sylius\Behat\Page\Shop\Product\ShowPageInterface;
 use Sylius\Behat\Service\NotificationCheckerInterface;
 use Sylius\Behat\Service\SessionManagerInterface;
 use Sylius\Behat\Service\SharedStorageInterface;
+use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Product\Model\ProductInterface;
 use Sylius\Component\Product\Model\ProductOptionInterface;
 use Webmozart\Assert\Assert;
 
 final class CartContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private SummaryPageInterface $summaryPage;
-
-    private ShowPageInterface $productShowPage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    private SessionManagerInterface $sessionManager;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        SummaryPageInterface $summaryPage,
-        ShowPageInterface $productShowPage,
-        NotificationCheckerInterface $notificationChecker,
-        SessionManagerInterface $sessionManager
+        private SharedStorageInterface $sharedStorage,
+        private SummaryPageInterface $summaryPage,
+        private AddressPageInterface $addressPage,
+        private CheckoutSubtotalElementInterface $checkoutSubtotalElement,
+        private ShowPageInterface $productShowPage,
+        private CartWidgetElementInterface $cartWidgetElement,
+        private NotificationCheckerInterface $notificationChecker,
+        private SessionManagerInterface $sessionManager,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->summaryPage = $summaryPage;
-        $this->productShowPage = $productShowPage;
-        $this->notificationChecker = $notificationChecker;
-        $this->sessionManager = $sessionManager;
     }
 
     /**
+     * @Given I am on the summary of my cart page
      * @When /^I see the summary of my (?:|previous )cart$/
      * @When /^I check details of my cart$/
      */
@@ -66,6 +59,14 @@ final class CartContext implements Context
     public function iUpdateMyCart()
     {
         $this->summaryPage->updateCart();
+    }
+
+    /**
+     * @When I proceed to the checkout
+     */
+    public function iProceedToTheCheckout(): void
+    {
+        $this->summaryPage->checkout();
     }
 
     /**
@@ -88,6 +89,16 @@ final class CartContext implements Context
     {
         $this->summaryPage->open();
         $this->summaryPage->removeProduct($productName);
+    }
+
+    /**
+     * @When I remove :variant variant from the cart
+     */
+    public function iRemoveVariantFromTheCart(ProductVariantInterface $variant): void
+    {
+        $this->summaryPage->open();
+        $product = $variant->getProduct();
+        $this->summaryPage->removeProduct($product->getName());
     }
 
     /**
@@ -203,7 +214,7 @@ final class CartContext implements Context
 
         try {
             $this->summaryPage->getShippingTotal();
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return;
         }
 
@@ -219,7 +230,7 @@ final class CartContext implements Context
 
         try {
             $this->summaryPage->getPromotionTotal();
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return;
         }
 
@@ -228,6 +239,7 @@ final class CartContext implements Context
 
     /**
      * @Then /^(its|theirs) price should be decreased by ("[^"]+")$/
+     * @Then /^(its|theirs) subtotal price should be decreased by ("[^"]+")$/
      * @Then /^(product "[^"]+") price should be decreased by ("[^"]+")$/
      */
     public function itsPriceShouldBeDecreasedBy(ProductInterface $product, $amount)
@@ -239,6 +251,20 @@ final class CartContext implements Context
         $regularUnitPrice = $this->summaryPage->getItemUnitRegularPrice($product->getName());
 
         Assert::same($this->getPriceFromString($itemTotal), ($quantity * $regularUnitPrice) - $amount);
+    }
+
+    /**
+     * @Then /^(product "[^"]+") price should be discounted by ("[^"]+")$/
+     */
+    public function itsPriceShouldBeDiscountedBy(ProductInterface $product, $amount)
+    {
+        $this->summaryPage->open();
+
+        $quantity = $this->summaryPage->getQuantity($product->getName());
+        $discountedUnitPrice = $this->summaryPage->getItemUnitPrice($product->getName());
+        $regularUnitPrice = $this->summaryPage->getItemUnitRegularPrice($product->getName());
+
+        Assert::same($discountedUnitPrice, ($quantity * $regularUnitPrice) - $amount);
     }
 
     /**
@@ -307,7 +333,7 @@ final class CartContext implements Context
 
         $this->sharedStorage->set('product', $product);
         foreach ($product->getVariants() as $variant) {
-            if ($variant->getName() === $variantName) {
+            if ($variantName === ($variant->getName() ?? $variant->getDescriptor())) {
                 $this->sharedStorage->set('variant', $variant);
 
                 break;
@@ -325,7 +351,7 @@ final class CartContext implements Context
     }
 
     /**
-     * @Given /^I have(?:| added) (\d+) (products "([^"]+)") (?:to|in) the cart$/
+     * @Given /^I have(?:| added) (\d+) (product(?:|s) "([^"]+)") (?:to|in) the cart$/
      * @When /^I add(?:|ed)(?:| again) (\d+) (products "([^"]+)") to the cart$/
      */
     public function iAddProductsToTheCart($quantity, ProductInterface $product)
@@ -334,6 +360,14 @@ final class CartContext implements Context
         $this->productShowPage->addToCartWithQuantity($quantity);
 
         $this->sharedStorage->set('product', $product);
+    }
+
+    /**
+     * @When I specify product :productName quantity to :quantity
+     */
+    public function iSpecifyQuantityToInMyCart(string $productName, int $quantity): void
+    {
+        $this->summaryPage->specifyQuantity($productName, $quantity);
     }
 
     /**
@@ -405,7 +439,7 @@ final class CartContext implements Context
     public function iAddThisProductWithToTheCart(
         ProductInterface $product,
         ProductOptionInterface $productOption,
-        string $productOptionValue
+        string $productOptionValue,
     ): void {
         $this->productShowPage->open(['slug' => $product->getSlug()]);
 
@@ -498,11 +532,11 @@ final class CartContext implements Context
     }
 
     /**
-     * @Then /^I should be notified that (this product) cannot be updated$/
+     * @Then /^I should be notified that (this product) has insufficient stock$/
      */
     public function iShouldBeNotifiedThatThisProductDoesNotHaveSufficientStock(ProductInterface $product)
     {
-        Assert::true($this->summaryPage->hasProductOutOfStockValidationMessage($product));
+        Assert::true($this->summaryPage->hasItemWithInsufficientStock($product->getName()));
     }
 
     /**
@@ -529,6 +563,30 @@ final class CartContext implements Context
     public function itemShouldHaveImageDisplayed(int $itemNumber, string $image): void
     {
         Assert::contains($this->summaryPage->getItemImage($itemNumber), $image);
+    }
+
+    /**
+     * @Then I should see cart total quantity is :totalQuantity
+     */
+    public function iShouldSeeCartTotalQuantity(int $totalQuantity): void
+    {
+        Assert::same($this->cartWidgetElement->getCartTotalQuantity(), $totalQuantity);
+    }
+
+    /**
+     * @Then I should be on the checkout addressing page
+     */
+    public function iShouldBeOnTheCheckoutAddressingStep(): void
+    {
+        $this->addressPage->verify();
+    }
+
+    /**
+     * @Then the quantity of :productName should be :quantity
+     */
+    public function theQuantityOfShouldBe(string $productName, int $quantity): void
+    {
+        Assert::same($this->checkoutSubtotalElement->getProductQuantity($productName), $quantity);
     }
 
     private function getPriceFromString(string $price): int

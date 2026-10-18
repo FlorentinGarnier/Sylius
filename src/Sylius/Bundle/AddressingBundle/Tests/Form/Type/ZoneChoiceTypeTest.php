@@ -13,8 +13,9 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\AddressingBundle\Tests\Form\Type;
 
-use Prophecy\Prophecy\ObjectProphecy;
 use PHPUnit\Framework\Assert;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Prophecy\Prophecy\ProphecyInterface;
 use Sylius\Bundle\AddressingBundle\Form\Type\ZoneChoiceType;
 use Sylius\Component\Addressing\Model\Scope as AddressingScope;
@@ -26,6 +27,8 @@ use Symfony\Component\Form\Test\TypeTestCase;
 
 final class ZoneChoiceTypeTest extends TypeTestCase
 {
+    use ProphecyTrait;
+
     private ObjectProphecy $zoneRepository;
 
     /** @var ProphecyInterface|ZoneInterface */
@@ -136,6 +139,6 @@ final class ZoneChoiceTypeTest extends TypeTestCase
         $form = $this->factory->create(ZoneChoiceType::class, null, $formConfiguration);
         $view = $form->createView();
 
-        Assert::assertSame($expectedLabels, array_map(fn(ChoiceView $choiceView): string => $choiceView->label, $view->vars['choices']));
+        Assert::assertSame($expectedLabels, array_map(fn (ChoiceView $choiceView): string => $choiceView->label, $view->vars['choices']));
     }
 }

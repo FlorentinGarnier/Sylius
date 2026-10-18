@@ -75,6 +75,24 @@ final class PaymentMethodFixtureTest extends TestCase
     /**
      * @test
      */
+    public function payment_method_channels_are_optional(): void
+    {
+        $this->assertConfigurationIsValid([['custom' => [['channels' => ['CHN-1', 'CHN-2']]]]], 'custom.*.channels');
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => []]]]],
+            ['custom' => [['channels' => []]]],
+            'custom.*.channels',
+        );
+        $this->assertProcessedConfigurationEquals(
+            [['custom' => [['channels' => null]]]],
+            ['custom' => [[]]],
+            'custom.*.channels',
+        );
+    }
+
+    /**
+     * @test
+     */
     public function payment_method_instructions_configuration_must_by_string(): void
     {
         $this->assertConfigurationIsValid([['custom' => [['instructions' => 'test']]]], 'custom.*.instructions');
@@ -97,7 +115,7 @@ final class PaymentMethodFixtureTest extends TestCase
         $this->assertProcessedConfigurationEquals(
             [['custom' => [[]]]],
             ['custom' => [[]]],
-            'custom.*.instructions'
+            'custom.*.instructions',
         );
     }
 
@@ -130,7 +148,7 @@ final class PaymentMethodFixtureTest extends TestCase
     {
         return new PaymentMethodFixture(
             $this->getMockBuilder(ObjectManager::class)->getMock(),
-            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock()
+            $this->getMockBuilder(ExampleFactoryInterface::class)->getMock(),
         );
     }
 }

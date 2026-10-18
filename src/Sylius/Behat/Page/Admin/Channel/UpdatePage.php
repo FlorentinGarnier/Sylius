@@ -18,6 +18,7 @@ use Sylius\Behat\Behaviour\ChecksCodeImmutability;
 use Sylius\Behat\Behaviour\Toggles;
 use Sylius\Behat\Page\Admin\Crud\UpdatePage as BaseUpdatePage;
 use Sylius\Behat\Service\AutocompleteHelper;
+use Sylius\Behat\Service\DriverHelper;
 
 class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
 {
@@ -97,7 +98,15 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
 
     public function getMenuTaxon(): string
     {
-        return $this->getElement('menu_taxon')->getParent()->find('css', '.search > .text')->getText();
+        $element = $this->getElement('menu_taxon');
+
+        if (DriverHelper::isJavascript($this->getDriver())) {
+            $this->getDocument()->waitFor(1, function () use ($element) {
+                return $element->getText() !== '';
+            });
+        }
+
+        return $element->getText();
     }
 
     public function getUsedTheme(): string
@@ -123,9 +132,10 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
             'currencies' => '#sylius_channel_currencies',
             'default_locale' => '#sylius_channel_defaultLocale',
             'default_tax_zone' => '#sylius_channel_defaultTaxZone',
+            'discounted_products_checking_period' => '#sylius_channel_channelPriceHistoryConfig_lowestPriceForDiscountedProductsCheckingPeriod',
             'enabled' => '#sylius_channel_enabled',
             'locales' => '#sylius_channel_locales',
-            'menu_taxon' => '#sylius_channel_menuTaxon',
+            'menu_taxon' => '#sylius_channel_menuTaxon ~ .text',
             'name' => '#sylius_channel_name',
             'tax_calculation_strategy' => '#sylius_channel_taxCalculationStrategy',
         ]);

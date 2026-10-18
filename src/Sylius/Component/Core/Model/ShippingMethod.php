@@ -23,14 +23,10 @@ use Sylius\Component\Taxation\Model\TaxCategoryInterface;
 
 class ShippingMethod extends BaseShippingMethod implements ShippingMethodInterface
 {
-    /**
-     * @var ZoneInterface|null
-     */
+    /** @var ZoneInterface|null */
     protected $zone;
 
-    /**
-     * @var TaxCategoryInterface|null
-     */
+    /** @var TaxCategoryInterface|null */
     protected $taxCategory;
 
     /**
@@ -74,6 +70,7 @@ class ShippingMethod extends BaseShippingMethod implements ShippingMethodInterfa
      */
     public function getChannels(): Collection
     {
+        /** @phpstan-ignore-next-line */
         return $this->channels;
     }
 

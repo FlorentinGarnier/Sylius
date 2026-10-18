@@ -13,13 +13,12 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Admin\Taxon;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ElementNotFoundException;
-use DMore\ChromeDriver\ChromeDriver;
 use Sylius\Behat\Behaviour\ChecksCodeImmutability;
 use Sylius\Behat\Page\Admin\Crud\UpdatePage as BaseUpdatePage;
 use Sylius\Behat\Service\AutocompleteHelper;
+use Sylius\Behat\Service\DriverHelper;
 use Sylius\Behat\Service\SlugGenerationHelper;
 use Sylius\Component\Core\Model\TaxonInterface;
 use Webmozart\Assert\Assert;
@@ -45,10 +44,10 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
         $this->activateLanguageTab($languageCode);
         $this->getDocument()->fillField(sprintf('sylius_taxon_translations_%s_name', $languageCode), $name);
 
-        if ($this->getDriver() instanceof Selenium2Driver || $this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isJavascript($this->getDriver())) {
             SlugGenerationHelper::waitForSlugGeneration(
                 $this->getSession(),
-                $this->getElement('slug', ['%language%' => $languageCode])
+                $this->getElement('slug', ['%language%' => $languageCode]),
             );
         }
     }
@@ -92,7 +91,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
     {
         return SlugGenerationHelper::isSlugReadonly(
             $this->getSession(),
-            $this->getElement('slug', ['%language%' => $languageCode])
+            $this->getElement('slug', ['%language%' => $languageCode]),
         );
     }
 
@@ -116,7 +115,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
         if (null !== $imageTypeElement && null !== $imageSourceElement) {
             $this->saveImageUrlForType(
                 $imageTypeElement->getValue(),
-                $imageSourceElement->getAttribute('src')
+                $imageSourceElement->getAttribute('src'),
             );
         }
 
@@ -127,7 +126,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
     {
         SlugGenerationHelper::enableSlugModification(
             $this->getSession(),
-            $this->getElement('toggle_taxon_slug_modification_button', ['%locale%' => $languageCode])
+            $this->getElement('toggle_taxon_slug_modification_button', ['%locale%' => $languageCode]),
         );
     }
 
@@ -190,7 +189,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
 
     public function activateLanguageTab(string $locale): void
     {
-        if (!$this->getDriver() instanceof Selenium2Driver && !$this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isNotJavascript($this->getDriver())) {
             return;
         }
 
@@ -199,9 +198,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
             $languageTabTitle->click();
         }
 
-        $this->getDocument()->waitFor(10, function () use ($languageTabTitle) {
-            return $languageTabTitle->hasClass('active');
-        });
+        $this->getDocument()->waitFor(10, fn () => $languageTabTitle->hasClass('active'));
     }
 
     public function enable(): void
@@ -295,7 +292,7 @@ class UpdatePage extends BaseUpdatePage implements UpdatePageInterface
 
     private function saveImageUrlForType(string $type, string $imageUrl): void
     {
-        if (false !== strpos($imageUrl, 'data:image/jpeg')) {
+        if (str_contains($imageUrl, 'data:image/jpeg')) {
             return;
         }
 

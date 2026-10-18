@@ -21,14 +21,10 @@ use Sylius\Component\Core\Model\PromotionInterface;
 
 final class RemovingTaxonContext implements Context
 {
-    private CreatePageInterface $createPage;
-
-    private NotificationCheckerInterface $notificationChecker;
-
-    public function __construct(CreatePageInterface $createPage, NotificationCheckerInterface $notificationChecker)
-    {
-        $this->createPage = $createPage;
-        $this->notificationChecker = $notificationChecker;
+    public function __construct(
+        private CreatePageInterface $createPage,
+        private NotificationCheckerInterface $notificationChecker,
+    ) {
     }
 
     /**
@@ -49,7 +45,7 @@ final class RemovingTaxonContext implements Context
     {
         $this->notificationChecker->checkNotification(
             sprintf('Some rules of the promotions with codes %s have been updated.', $promotion->getCode()),
-            NotificationType::info()
+            NotificationType::info(),
         );
     }
 }
