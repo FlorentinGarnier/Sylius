@@ -20,6 +20,7 @@ use Sylius\Bundle\CoreBundle\SectionResolver\SectionProviderInterface;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Channel\Context\ChannelNotFoundException;
 use Sylius\Component\Core\Calculator\ProductVariantPricesCalculatorInterface;
+use Sylius\Component\Core\Exception\MissingChannelConfigurationException;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Inventory\Checker\AvailabilityCheckerInterface;
@@ -40,7 +41,7 @@ final class ProductVariantNormalizer implements ContextAwareNormalizerInterface,
         private ChannelContextInterface $channelContext,
         private AvailabilityCheckerInterface $availabilityChecker,
         private SectionProviderInterface $uriBasedSectionContext,
-        private IriConverterInterface $iriConverter
+        private IriConverterInterface $iriConverter,
     ) {
     }
 
@@ -51,12 +52,23 @@ final class ProductVariantNormalizer implements ContextAwareNormalizerInterface,
 
         $context[self::ALREADY_CALLED] = true;
         $data = $this->normalizer->normalize($object, $format, $context);
-        $channel = $this->channelContext->getChannel();
+
+        $data['inStock'] = $this->availabilityChecker->isStockAvailable($object);
+
+        try {
+            $channel = $this->channelContext->getChannel();
+        } catch (ChannelNotFoundException) {
+            return $data;
+        }
 
         try {
             $data['price'] = $this->priceCalculator->calculate($object, ['channel' => $channel]);
             $data['originalPrice'] = $this->priceCalculator->calculateOriginal($object, ['channel' => $channel]);
-        } catch (ChannelNotFoundException) {
+            $data['lowestPriceBeforeDiscount'] = $this->priceCalculator->calculateLowestPriceBeforeDiscount(
+                $object,
+                ['channel' => $channel],
+            );
+        } catch (MissingChannelConfigurationException) {
             unset($data['price'], $data['originalPrice']);
         }
 
@@ -65,11 +77,9 @@ final class ProductVariantNormalizer implements ContextAwareNormalizerInterface,
         if (!$appliedPromotions->isEmpty()) {
             $data['appliedPromotions'] = array_map(
                 fn (CatalogPromotionInterface $catalogPromotion) => $this->iriConverter->getIriFromItem($catalogPromotion),
-                $appliedPromotions->toArray()
+                $appliedPromotions->toArray(),
             );
         }
-
-        $data['inStock'] = $this->availabilityChecker->isStockAvailable($object);
 
         return $data;
     }

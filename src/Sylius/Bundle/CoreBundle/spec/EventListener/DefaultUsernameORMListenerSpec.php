@@ -30,9 +30,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         UnitOfWork $unitOfWork,
         CustomerInterface $customer,
         ShopUserInterface $user,
-        ClassMetadata $userMetadata
+        ClassMetadata $userMetadata,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([$customer]);
@@ -59,9 +59,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         UnitOfWork $unitOfWork,
         CustomerInterface $customer,
         ShopUserInterface $user,
-        ClassMetadata $userMetadata
+        ClassMetadata $userMetadata,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([$user]);
@@ -88,9 +88,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         UnitOfWork $unitOfWork,
         CustomerInterface $customer,
         ShopUserInterface $user,
-        ClassMetadata $userMetadata
+        ClassMetadata $userMetadata,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([]);
@@ -117,9 +117,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         UnitOfWork $unitOfWork,
         CustomerInterface $customer,
         ShopUserInterface $user,
-        ClassMetadata $userMetadata
+        ClassMetadata $userMetadata,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([]);
@@ -146,9 +146,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         UnitOfWork $unitOfWork,
         CustomerInterface $customer,
         ShopUserInterface $user,
-        ClassMetadata $userMetadata
+        ClassMetadata $userMetadata,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([]);
@@ -172,9 +172,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         OnFlushEventArgs $onFlushEventArgs,
         EntityManager $entityManager,
         UnitOfWork $unitOfWork,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([$customer]);
@@ -191,9 +191,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         OnFlushEventArgs $onFlushEventArgs,
         EntityManager $entityManager,
         UnitOfWork $unitOfWork,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([]);
@@ -210,9 +210,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
     function it_does_nothing_when_there_are_no_objects_scheduled_in_the_unit_of_work(
         OnFlushEventArgs $onFlushEventArgs,
         EntityManager $entityManager,
-        UnitOfWork $unitOfWork
+        UnitOfWork $unitOfWork,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([]);
@@ -228,9 +228,9 @@ final class DefaultUsernameORMListenerSpec extends ObjectBehavior
         EntityManager $entityManager,
         UnitOfWork $unitOfWork,
         \stdClass $stdObject,
-        \stdClass $stdObject2
+        \stdClass $stdObject2,
     ): void {
-        $onFlushEventArgs->getEntityManager()->willReturn($entityManager);
+        $onFlushEventArgs->getObjectManager()->willReturn($entityManager);
         $entityManager->getUnitOfWork()->willReturn($unitOfWork);
 
         $unitOfWork->getScheduledEntityInsertions()->willReturn([$stdObject]);

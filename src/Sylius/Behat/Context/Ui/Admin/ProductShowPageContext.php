@@ -26,62 +26,29 @@ use Sylius\Behat\Element\Product\ShowPage\TaxonomyElementInterface;
 use Sylius\Behat\Element\Product\ShowPage\VariantsElementInterface;
 use Sylius\Behat\Page\Admin\Product\IndexPageInterface;
 use Sylius\Behat\Page\Admin\Product\ShowPageInterface;
+use Sylius\Component\Core\Model\CatalogPromotionInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 final class ProductShowPageContext implements Context
 {
-    private IndexPageInterface $indexPage;
-
-    private ShowPageInterface $productShowPage;
-
-    private AssociationsElementInterface $associationsElement;
-
-    private AttributesElementInterface $attributesElement;
-
-    private DetailsElementInterface $detailsElement;
-
-    private MediaElementInterface $mediaElement;
-
-    private MoreDetailsElementInterface $moreDetailsElement;
-
-    private PricingElementInterface $pricingElement;
-
-    private ShippingElementInterface $shippingElement;
-
-    private TaxonomyElementInterface $taxonomyElement;
-
-    private OptionsElementInterface $optionsElement;
-
-    private VariantsElementInterface $variantsElement;
-
     public function __construct(
-        IndexPageInterface $indexPage,
-        ShowPageInterface $productShowPage,
-        AssociationsElementInterface $associationsElement,
-        AttributesElementInterface $attributesElement,
-        DetailsElementInterface $detailsElement,
-        MediaElementInterface $mediaElement,
-        MoreDetailsElementInterface $moreDetailsElement,
-        PricingElementInterface $pricingElement,
-        ShippingElementInterface $shippingElement,
-        TaxonomyElementInterface $taxonomyElement,
-        OptionsElementInterface $optionsElement,
-        VariantsElementInterface $variantsElement
+        private IndexPageInterface $indexPage,
+        private ShowPageInterface $productShowPage,
+        private AssociationsElementInterface $associationsElement,
+        private AttributesElementInterface $attributesElement,
+        private DetailsElementInterface $detailsElement,
+        private MediaElementInterface $mediaElement,
+        private MoreDetailsElementInterface $moreDetailsElement,
+        private PricingElementInterface $pricingElement,
+        private ShippingElementInterface $shippingElement,
+        private TaxonomyElementInterface $taxonomyElement,
+        private OptionsElementInterface $optionsElement,
+        private VariantsElementInterface $variantsElement,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
-        $this->indexPage = $indexPage;
-        $this->productShowPage = $productShowPage;
-        $this->associationsElement = $associationsElement;
-        $this->attributesElement = $attributesElement;
-        $this->detailsElement = $detailsElement;
-        $this->mediaElement = $mediaElement;
-        $this->moreDetailsElement = $moreDetailsElement;
-        $this->pricingElement = $pricingElement;
-        $this->shippingElement = $shippingElement;
-        $this->taxonomyElement = $taxonomyElement;
-        $this->optionsElement = $optionsElement;
-        $this->variantsElement = $variantsElement;
     }
 
     /**
@@ -125,11 +92,37 @@ final class ProductShowPageContext implements Context
     }
 
     /**
+     * @When I access :product product
+     */
+    public function iAccessProduct(ProductInterface $product): void
+    {
+        $this->productShowPage->open(['id' => $product->getId()]);
+    }
+
+    /**
      * @When I go to edit page of :variant variant
      */
     public function iGoToEditPageOfVariant(ProductVariantInterface $variant): void
     {
         $this->productShowPage->showVariantEditPage($variant);
+    }
+
+    /**
+     * @When I access the price history of a simple product for :channelName channel
+     */
+    public function iAccessThePriceHistoryIndexPageOfSimpleProductForChannel(string $channelName): void
+    {
+        $pricingRow = $this->pricingElement->getSimpleProductPricingRowForChannel($channelName);
+        $pricingRow->clickLink('Show');
+    }
+
+    /**
+     * @When I access the price history of a product variant :variantName for :channelName channel
+     */
+    public function iAccessThePriceHistoryIndexPageOfVariantForChannel(string $variantName, string $channelName): void
+    {
+        $pricingRow = $this->pricingElement->getVariantPricingRowForChannel($variantName, $channelName);
+        $pricingRow->clickLink('Show');
     }
 
     /**
@@ -181,6 +174,53 @@ final class ProductShowPageContext implements Context
     }
 
     /**
+     * @Then I should see :lowestPriceBeforeDiscount as its lowest price before the discount in :channelName channel
+     */
+    public function iShouldSeeAsItsLowestPriceBeforeTheDiscountInChannel(
+        string $lowestPriceBeforeDiscount,
+        string $channelName,
+    ): void {
+        Assert::same($this->pricingElement->getLowestPriceBeforeDiscountForChannel($channelName), $lowestPriceBeforeDiscount);
+    }
+
+    /**
+     * @Then I should not see the lowest price before the discount in :channelName channel
+     */
+    public function iShouldNotSeeTheLowestPriceBeforeTheDiscountInChannel(string $channelName): void
+    {
+        Assert::same($this->pricingElement->getLowestPriceBeforeDiscountForChannel($channelName), '-');
+    }
+
+    /**
+     * @Then I should see the lowest price before the discount of :lowestPriceBeforeDiscount for :variantName variant in :channelName channel
+     */
+    public function iShouldSeeVariantWithTheLowestPriceBeforeTheDiscountOfInChannel(
+        string $lowestPriceBeforeDiscount,
+        string $variantName,
+        string $channelName,
+    ): void {
+        Assert::true($this->variantsElement->hasProductVariantWithLowestPriceBeforeDiscountInChannel(
+            $variantName,
+            $lowestPriceBeforeDiscount,
+            $channelName,
+        ));
+    }
+
+    /**
+     * @Then I should not see the lowest price before the discount for :variantName variant in :channelName channel
+     */
+    public function iShouldNotSeeTheLowestPriceBeforeTheDiscountForVariantInChannel(
+        string $variantName,
+        string $channelName,
+    ): void {
+        Assert::true($this->variantsElement->hasProductVariantWithLowestPriceBeforeDiscountInChannel(
+            $variantName,
+            '-',
+            $channelName,
+        ));
+    }
+
+    /**
      * @Then I should not see price for channel :channelName
      */
     public function iShouldNotSeePriceForChannel(string $channelName): void
@@ -191,9 +231,9 @@ final class ProductShowPageContext implements Context
     /**
      * @Then I should see original price :price for channel :channelName
      */
-    public function iShouldSeeOrginalPriceForChannel(string $orginalPrice, string $channelName): void
+    public function iShouldSeeOriginalPriceForChannel(string $originalPrice, string $channelName): void
     {
-        Assert::same($this->pricingElement->getOriginalPriceForChannel($channelName), $orginalPrice);
+        Assert::same($this->pricingElement->getOriginalPriceForChannel($channelName), $originalPrice);
     }
 
     /**
@@ -365,11 +405,22 @@ final class ProductShowPageContext implements Context
     }
 
     /**
-     * @Then I should see :variantName variant with code :code, priced :price and current stock :currentStock
+     * @Then I should see :variantName variant with code :code, priced :price and current stock :currentStock and in :channel channel
      */
-    public function iShouldSeeVariantWithCodePriceAndCurrentStock(string $variantName, string $code, string $price, string $currentStock): void
-    {
-        Assert::true($this->variantsElement->hasProductVariantWithCodePriceAndCurrentStock($variantName, $code, $price, $currentStock));
+    public function iShouldSeeVariantWithCodePriceAndCurrentStock(
+        string $variantName,
+        string $code,
+        string $price,
+        string $currentStock,
+        string $channel,
+    ): void {
+        Assert::true($this->variantsElement->hasProductVariantWithCodePriceAndCurrentStock(
+            $variantName,
+            $code,
+            $price,
+            $currentStock,
+            $channel,
+        ));
     }
 
     /**
@@ -394,5 +445,50 @@ final class ProductShowPageContext implements Context
     public function iShouldNotBeAbleToShowThisProductInShop(): void
     {
         Assert::true($this->productShowPage->isShowInShopButtonDisabled());
+    }
+
+    /**
+     * @Then this product price should be decreased by catalog promotion :catalogPromotion in :channelName channel
+     */
+    public function thisProductPriceShouldBeDecreasedByCatalogPromotion(
+        CatalogPromotionInterface $catalogPromotion,
+        string $channelName,
+    ): void {
+        Assert::inArray(
+            $catalogPromotion->getName(),
+            $this->pricingElement->getCatalogPromotionsNamesForChannel($channelName),
+        );
+
+        $url = $this->urlGenerator->generate('sylius_admin_catalog_promotion_show', ['id' => $catalogPromotion->getId()]);
+        Assert::inArray($url, $this->pricingElement->getCatalogPromotionLinksForChannel($channelName));
+    }
+
+    /**
+     * @Then :variantName variant price should be decreased by catalog promotion :catalogPromotion in :channelName channel
+     */
+    public function variantPriceShouldBeDecreasedByCatalogPromotion(
+        string $variantName,
+        CatalogPromotionInterface $catalogPromotion,
+        string $channelName,
+    ): void {
+        Assert::inArray(
+            $catalogPromotion->getName(),
+            $this->productShowPage->getAppliedCatalogPromotionsNames($variantName, $channelName),
+        );
+
+        $url = $this->urlGenerator->generate('sylius_admin_catalog_promotion_show', ['id' => $catalogPromotion->getId()]);
+        Assert::inArray($url, $this->productShowPage->getAppliedCatalogPromotionsLinks($variantName, $channelName));
+    }
+
+    /**
+     * @Then :variantName variant price should not be decreased by catalog promotion :catalogPromotion in :channelName channel
+     */
+    public function variantPriceShouldNotBeDecreasedByCatalogPromotion(
+        string $variantName,
+        CatalogPromotionInterface $catalogPromotion,
+        string $channelName,
+    ): void {
+        $appliedPromotions = $this->productShowPage->getAppliedCatalogPromotionsNames($variantName, $channelName);
+        Assert::false(in_array($catalogPromotion->getName(), $appliedPromotions));
     }
 }

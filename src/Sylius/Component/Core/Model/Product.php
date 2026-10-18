@@ -24,9 +24,7 @@ use Webmozart\Assert\Assert;
 
 class Product extends BaseProduct implements ProductInterface, ReviewableProductInterface
 {
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $variantSelectionMethod = self::VARIANT_SELECTION_CHOICE;
 
     /**
@@ -43,9 +41,7 @@ class Product extends BaseProduct implements ProductInterface, ReviewableProduct
      */
     protected $channels;
 
-    /**
-     * @var \Sylius\Component\Core\Model\TaxonInterface|null
-     */
+    /** @var \Sylius\Component\Core\Model\TaxonInterface|null */
     protected $mainTaxon;
 
     /**
@@ -55,9 +51,7 @@ class Product extends BaseProduct implements ProductInterface, ReviewableProduct
      */
     protected $reviews;
 
-    /**
-     * @var float
-     */
+    /** @var float */
     protected $averageRating = 0.0;
 
     /**
@@ -94,7 +88,7 @@ class Product extends BaseProduct implements ProductInterface, ReviewableProduct
         Assert::oneOf(
             $variantSelectionMethod,
             [self::VARIANT_SELECTION_CHOICE, self::VARIANT_SELECTION_MATCH],
-            sprintf('Wrong variant selection method "%s" given.', $variantSelectionMethod)
+            sprintf('Wrong variant selection method "%s" given.', $variantSelectionMethod),
         );
 
         $this->variantSelectionMethod = $variantSelectionMethod;
@@ -155,6 +149,7 @@ class Product extends BaseProduct implements ProductInterface, ReviewableProduct
      */
     public function getChannels(): Collection
     {
+        /** @phpstan-ignore-next-line */
         return $this->channels;
     }
 
@@ -278,7 +273,10 @@ class Product extends BaseProduct implements ProductInterface, ReviewableProduct
      */
     public function getTranslation(?string $locale = null): TranslationInterface
     {
-        return parent::getTranslation($locale);
+        $productTranslation = parent::getTranslation($locale);
+        Assert::isInstanceOf($productTranslation, ProductTranslationInterface::class);
+
+        return $productTranslation;
     }
 
     /**

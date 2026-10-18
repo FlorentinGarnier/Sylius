@@ -20,9 +20,9 @@ use Symfony\Component\Form\FormView;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Twig\Environment;
 
@@ -33,7 +33,7 @@ final class SecurityControllerSpec extends ObjectBehavior
         FormFactoryInterface $formFactory,
         Environment $templatingEngine,
         AuthorizationCheckerInterface $authorizationChecker,
-        RouterInterface $router
+        RouterInterface $router,
     ): void {
         $this->beConstructedWith($authenticationUtils, $formFactory, $templatingEngine, $authorizationChecker, $router);
     }
@@ -47,11 +47,11 @@ final class SecurityControllerSpec extends ObjectBehavior
         FormView $formView,
         Environment $templatingEngine,
         AuthorizationCheckerInterface $authorizationChecker,
-        Response $response
+        AuthenticationException $authenticationException,
     ): void {
         $authorizationChecker->isGranted('IS_AUTHENTICATED_FULLY')->willReturn(false);
 
-        $authenticationUtils->getLastAuthenticationError()->willReturn('Bad credentials.');
+        $authenticationUtils->getLastAuthenticationError()->willReturn($authenticationException);
         $authenticationUtils->getLastUsername()->willReturn('john.doe');
 
         $request->attributes = $requestAttributes;
@@ -67,7 +67,7 @@ final class SecurityControllerSpec extends ObjectBehavior
             ->render('CustomTemplateName', [
                 'form' => $formView,
                 'last_username' => 'john.doe',
-                'last_error' => 'Bad credentials.',
+                'last_error' => $authenticationException->getWrappedObject(),
             ])
             ->willReturn('content')
         ;
@@ -79,7 +79,7 @@ final class SecurityControllerSpec extends ObjectBehavior
         Request $request,
         ParameterBag $requestAttributes,
         AuthorizationCheckerInterface $authorizationChecker,
-        RouterInterface $router
+        RouterInterface $router,
     ): void {
         $request->attributes = $requestAttributes;
         $requestAttributes->get('_sylius')->willReturn(['logged_in_route' => 'foo_bar']);
@@ -93,13 +93,15 @@ final class SecurityControllerSpec extends ObjectBehavior
     {
         $this
             ->shouldThrow(new \RuntimeException('You must configure the check path to be handled by the firewall.'))
-            ->during('checkAction', [$request]);
+            ->during('checkAction', [$request])
+        ;
     }
 
     function it_throws_an_exception_when_logout_action_is_accessed(Request $request): void
     {
         $this
             ->shouldThrow(new \RuntimeException('You must configure the logout path to be handled by the firewall.'))
-            ->during('logoutAction', [$request]);
+            ->during('logoutAction', [$request])
+        ;
     }
 }

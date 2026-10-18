@@ -15,7 +15,6 @@ namespace spec\Sylius\Component\Core\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use PhpSpec\ObjectBehavior;
-use Stripe\Collection;
 use Sylius\Component\Core\Model\CatalogPromotionInterface;
 use Sylius\Component\Core\Model\ChannelPricingInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
@@ -56,6 +55,12 @@ final class ChannelPricingSpec extends ObjectBehavior
         $this->getOriginalPrice()->shouldReturn(2000);
     }
 
+    function its_lowest_price_before_discount_is_mutable(): void
+    {
+        $this->setLowestPriceBeforeDiscount(2000);
+        $this->getLowestPriceBeforeDiscount()->shouldReturn(2000);
+    }
+
     function its_price_can_be_reduced(): void
     {
         $this->setPrice(1000);
@@ -89,9 +94,8 @@ final class ChannelPricingSpec extends ObjectBehavior
     }
 
     function it_has_information_about_applied_exclusive_catalog_promotion_applied(
-        CatalogPromotionInterface $catalogPromotion
-    ): void
-    {
+        CatalogPromotionInterface $catalogPromotion,
+    ): void {
         $catalogPromotion->isExclusive()->willReturn(true);
 
         $this->addAppliedPromotion($catalogPromotion);
@@ -100,7 +104,7 @@ final class ChannelPricingSpec extends ObjectBehavior
 
     function it_can_have_multiple_promotions_applied(
         CatalogPromotionInterface $firstCatalogPromotion,
-        CatalogPromotionInterface $secondCatalogPromotion
+        CatalogPromotionInterface $secondCatalogPromotion,
     ): void {
         $this->addAppliedPromotion($firstCatalogPromotion);
         $this->addAppliedPromotion($secondCatalogPromotion);

@@ -22,10 +22,6 @@
             <attribute name="position">ASC</attribute>
         </attribute>
 
-        <attribute name="normalization_context">
-            <attribute name="groups">admin:shipping_method:read</attribute>
-        </attribute>
-
         <itemOperations>
             <itemOperation name="admin_get">
                 <attribute name="method">GET</attribute>
@@ -49,6 +45,9 @@
                 <attribute name="denormalization_context">
                     <attribute name="groups">admin:shipping_method:update</attribute>
                 </attribute>
+                <attribute name="normalization_context">
+                    <attribute name="groups">admin:shipping_method:read</attribute>
+                </attribute>
             </itemOperation>
 
             <itemOperation name="admin_delete">
@@ -60,9 +59,12 @@
                 <attribute name="method">PATCH</attribute>
                 <attribute name="path">/admin/shipping-methods/{code}/archive</attribute>
                 <attribute name="input">false</attribute>
-                <attribute name="controller">Sylius\Bundle\ApiBundle\Applicator\ArchivingShippingMethodApplicatorInterface:archive</attribute>
+                <attribute name="controller">Sylius\Bundle\ApiBundle\Applicator\ArchivingShippingMethodApplicatorInterface::archive</attribute>
                 <attribute name="openapi_context">
                     <attribute name="summary">Archives Shipping Method</attribute>
+                </attribute>
+                <attribute name="normalization_context">
+                    <attribute name="groups">admin:shipping_method:read</attribute>
                 </attribute>
             </itemOperation>
 
@@ -70,9 +72,12 @@
                 <attribute name="method">PATCH</attribute>
                 <attribute name="path">/admin/shipping-methods/{code}/restore</attribute>
                 <attribute name="input">false</attribute>
-                <attribute name="controller">Sylius\Bundle\ApiBundle\Applicator\ArchivingShippingMethodApplicatorInterface:restore</attribute>
+                <attribute name="controller">Sylius\Bundle\ApiBundle\Applicator\ArchivingShippingMethodApplicatorInterface::restore</attribute>
                 <attribute name="openapi_context">
                     <attribute name="summary">Restores archived Shipping Method</attribute>
+                </attribute>
+                <attribute name="normalization_context">
+                    <attribute name="groups">admin:shipping_method:read</attribute>
                 </attribute>
             </itemOperation>
         </itemOperations>
@@ -109,6 +114,9 @@
                 <attribute name="path">/admin/shipping-methods</attribute>
                 <attribute name="denormalization_context">
                     <attribute name="groups">admin:shipping_method:create</attribute>
+                </attribute>
+                <attribute name="normalization_context">
+                    <attribute name="groups">admin:shipping_method:read</attribute>
                 </attribute>
             </collectionOperation>
         </collectionOperations>

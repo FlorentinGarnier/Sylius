@@ -56,7 +56,7 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
     {
         try {
             $this->getElement('no_taxes');
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return true;
         }
 
@@ -144,6 +144,11 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
         $this->getElement('save_button')->click();
     }
 
+    public function specifyQuantity(string $productName, int $quantity): void
+    {
+        $this->getElement('item_quantity_input', ['%name%' => $productName])->setValue($quantity);
+    }
+
     public function isSingleItemOnPage(): bool
     {
         $items = $this->getElement('cart_items')->findAll('css', '[data-test-cart-product-row]');
@@ -180,20 +185,27 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
         return $this->hasItemWith($code, '[data-test-product-variant-code]');
     }
 
+    public function hasItemWithInsufficientStock(string $productName): bool
+    {
+        $product = $this->getElement('product_row', ['%name%' => $productName]);
+
+        return str_contains($product->getText(), 'Insufficient stock');
+    }
+
     public function hasProductOutOfStockValidationMessage(ProductInterface $product): bool
     {
         $message = sprintf('%s does not have sufficient stock.', $product->getName());
 
         try {
             return $this->getElement('validation_errors')->getText() === $message;
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return false;
         }
     }
 
     public function isEmpty(): bool
     {
-        return false !== strpos($this->getElement('flash_message')->getText(), 'Your cart is empty');
+        return str_contains($this->getElement('flash_message')->getText(), 'Your cart is empty');
     }
 
     public function getQuantity(string $productName): int
@@ -205,7 +217,7 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
     {
         $cartTotalText = $this->getElement('cart_total')->getText();
 
-        if (strpos($cartTotalText, ',') !== false) {
+        if (str_contains($cartTotalText, ',')) {
             return strstr($cartTotalText, ',', true);
         }
 
@@ -222,11 +234,14 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
         $this->getElement('update_button')->click();
     }
 
+    public function checkout(): void
+    {
+        $this->getElement('checkout_button')->click();
+    }
+
     public function waitForRedirect(int $timeout): void
     {
-        $this->getDocument()->waitFor($timeout, function () {
-            return $this->isOpen();
-        });
+        $this->getDocument()->waitFor($timeout, fn () => $this->isOpen());
     }
 
     public function getPromotionCouponValidationMessage(): string
@@ -241,6 +256,7 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
             'base_grand_total' => '[data-test-cart-base-grand-total]',
             'cart_items' => '[data-test-cart-items]',
             'cart_total' => '[data-test-cart-total]',
+            'checkout_button' => '[data-test-cart-checkout-button]',
             'clear_button' => '[data-test-cart-clear-button]',
             'coupon_field' => '[data-test-cart-promotion-coupon-input]',
             'delete_button' => '[data-test-cart-remove-button="%name%"]',
@@ -266,11 +282,9 @@ class SummaryPage extends SymfonyPage implements SummaryPageInterface
     }
 
     /**
-     * @param string|array $selector
-     *
      * @throws ElementNotFoundException
      */
-    private function hasItemWith(string $attributeName, $selector): bool
+    private function hasItemWith(string $attributeName, array|string $selector): bool
     {
         $itemsAttributes = $this->getElement('cart_items')->findAll('css', $selector);
 

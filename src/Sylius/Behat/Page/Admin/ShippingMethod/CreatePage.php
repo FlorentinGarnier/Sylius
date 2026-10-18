@@ -13,12 +13,12 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Admin\ShippingMethod;
 
-use Behat\Mink\Driver\Selenium2Driver;
 use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\ElementNotFoundException;
-use DMore\ChromeDriver\ChromeDriver;
 use Sylius\Behat\Behaviour\SpecifiesItsCode;
 use Sylius\Behat\Page\Admin\Crud\CreatePage as BaseCreatePage;
+use Sylius\Behat\Service\DriverHelper;
+use Sylius\Behat\Service\TabsHelper;
 use Sylius\Component\Core\Formatter\StringInflector;
 use Webmozart\Assert\Assert;
 
@@ -40,12 +40,14 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
     {
         $this->getDocument()->fillField(
             sprintf('sylius_shipping_method_translations_%s_description', $languageCode),
-            $description
+            $description,
         );
     }
 
     public function specifyAmountForChannel(string $channelCode, string $amount): void
     {
+        TabsHelper::switchTab($this->getSession(), $this->getElement('calculator_configuration'), $channelCode);
+
         $this->getElement('amount', ['%channelCode%' => $channelCode])->setValue($amount);
     }
 
@@ -61,7 +63,7 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
 
     public function checkChannel($channelName): void
     {
-        if ($this->getDriver() instanceof Selenium2Driver || $this->getDriver() instanceof ChromeDriver) {
+        if (DriverHelper::isJavascript($this->getDriver())) {
             $this->getElement('channel', ['%channel%' => $channelName])->click();
 
             return;
@@ -83,7 +85,7 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
                 $this->getSession(),
                 'Validation message',
                 'css',
-                '.sylius-validation-error'
+                '.sylius-validation-error',
             );
         }
 
@@ -96,9 +98,7 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
 
         $this->getDocument()->clickLink('Add rule');
 
-        $this->getDocument()->waitFor(5, function () use ($count) {
-            return $count + 1 === count($this->getCollectionItems('rules'));
-        });
+        $this->getDocument()->waitFor(5, fn () => $count + 1 === count($this->getCollectionItems('rules')));
 
         $this->selectRuleOption('Type', $ruleName);
     }
@@ -113,9 +113,9 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         $this->getLastCollectionItem('rules')->fillField($option, $value);
     }
 
-    public function fillRuleOptionForChannel(string $channelName, string $option, string $value): void
+    public function fillRuleOptionForChannel(string $channelCode, string $option, string $value): void
     {
-        $lastAction = $this->getChannelConfigurationOfLastRule($channelName);
+        $lastAction = $this->getChannelConfigurationOfLastRule($channelCode);
         $lastAction->fillField($option, $value);
     }
 
@@ -125,6 +125,7 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
             'amount' => '#sylius_shipping_method_configuration_%channelCode%_amount',
             'channel' => '#sylius_shipping_method_channels .ui.checkbox:contains("%channel%")',
             'calculator' => '#sylius_shipping_method_calculator',
+            'calculator_configuration' => '.ui.segment.configuration',
             'code' => '#sylius_shipping_method_code',
             'name' => '#sylius_shipping_method_translations_en_US_name',
             'zone' => '#sylius_shipping_method_zone',
@@ -166,11 +167,11 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         return $items;
     }
 
-    private function getChannelConfigurationOfLastRule(string $channelName): NodeElement
+    private function getChannelConfigurationOfLastRule(string $channelCode): NodeElement
     {
         return $this
             ->getLastCollectionItem('rules')
-            ->find('css', sprintf('[id$="configuration"] .field:contains("%s")', $channelName))
+            ->find('css', sprintf('[id^="sylius_shipping_method_rules_"][id$="_configuration_%s"]', $channelCode))
         ;
     }
 }

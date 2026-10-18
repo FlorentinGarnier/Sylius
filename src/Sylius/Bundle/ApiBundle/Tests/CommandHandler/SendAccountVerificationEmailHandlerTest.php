@@ -13,37 +13,34 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\ApiBundle\Tests\CommandHandler;
 
+use Prophecy\PhpUnit\ProphecyTrait;
 use Prophecy\Prophecy\ObjectProphecy;
 use Sylius\Bundle\ApiBundle\Command\Account\SendAccountVerificationEmail;
 use Sylius\Bundle\ApiBundle\CommandHandler\Account\SendAccountVerificationEmailHandler;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
-use Sylius\Component\Core\Test\Services\EmailChecker;
 use Sylius\Component\User\Model\UserInterface;
 use Sylius\Component\User\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Bundle\FrameworkBundle\Test\MailerAssertionsTrait;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class SendAccountVerificationEmailHandlerTest extends KernelTestCase
 {
-    /**
-     * @test
-     */
+    use ProphecyTrait;
+    use MailerAssertionsTrait;
+
+    /** @test */
     public function it_sends_account_verification_token_email(): void
     {
-        $container = self::bootKernel()->getContainer();
+        if ($this->isItSwiftmailerTestEnv()) {
+            $this->markTestSkipped('Test is relevant only for the environment without swiftmailer');
+        }
 
-        /** @var Filesystem $filesystem */
-        $filesystem = $container->get('filesystem');
+        $container = self::getContainer();
 
         /** @var TranslatorInterface $translator */
         $translator = $container->get('translator');
-
-        /** @var EmailChecker $emailChecker */
-        $emailChecker = $container->get('sylius.behat.email_checker');
-
-        $filesystem->remove($emailChecker->getSpoolDirectory());
 
         $emailSender = $container->get('sylius.email_sender');
 
@@ -65,21 +62,30 @@ final class SendAccountVerificationEmailHandlerTest extends KernelTestCase
         $sendAccountVerificationEmailHandler = new SendAccountVerificationEmailHandler(
             $userRepository->reveal(),
             $channelRepository->reveal(),
-            $emailSender
+            $emailSender,
         );
 
         $sendAccountVerificationEmailHandler(
             new SendAccountVerificationEmail(
                 'user@example.com',
                 'en_US',
-                'CHANNEL_CODE'
-            )
+                'CHANNEL_CODE',
+            ),
         );
 
-        self::assertSame(1, $emailChecker->countMessagesTo('user@example.com'));
-        self::assertTrue($emailChecker->hasMessageTo(
+        self::assertEmailCount(1);
+        $email = self::getMailerMessage();
+        self::assertEmailAddressContains($email, 'To', 'user@example.com');
+        self::assertEmailHtmlBodyContains(
+            $email,
             $translator->trans('sylius.email.verification_token.message', [], null, 'en_US'),
-            'user@example.com'
-        ));
+        );
+    }
+
+    private function isItSwiftmailerTestEnv(): bool
+    {
+        $env = self::getContainer()->getParameter('kernel.environment');
+
+        return $env === 'test_with_swiftmailer';
     }
 }

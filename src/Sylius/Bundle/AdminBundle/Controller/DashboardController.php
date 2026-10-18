@@ -17,22 +17,22 @@ use Sylius\Bundle\AdminBundle\Provider\StatisticsDataProviderInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Dashboard\SalesDataProviderInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
-use Symfony\Bundle\FrameworkBundle\Templating\EngineInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
 use Twig\Environment;
+use Webmozart\Assert\Assert;
 
 final class DashboardController
 {
     public function __construct(
         private ChannelRepositoryInterface $channelRepository,
-        private EngineInterface|Environment $templatingEngine,
+        private Environment $templatingEngine,
         private RouterInterface $router,
         private ?SalesDataProviderInterface $salesDataProvider = null,
-        private ?StatisticsDataProviderInterface $statisticsDataProvider = null
+        private ?StatisticsDataProviderInterface $statisticsDataProvider = null,
     ) {
     }
 
@@ -64,17 +64,23 @@ final class DashboardController
                 $channel,
                 (new \DateTime((string) $request->query->get('startDate'))),
                 (new \DateTime((string) $request->query->get('endDate'))),
-                (string) $request->query->get('interval')
-            )
+                (string) $request->query->get('interval'),
+            ),
         );
     }
 
     private function findChannelByCodeOrFindFirst(?string $channelCode): ?ChannelInterface
     {
         if (null !== $channelCode) {
-            return $this->channelRepository->findOneByCode($channelCode);
+            $channel = $this->channelRepository->findOneByCode($channelCode);
+            Assert::nullOrIsInstanceOf($channel, ChannelInterface::class);
+
+            return $channel;
         }
 
-        return $this->channelRepository->findOneBy([]);
+        $channel = $this->channelRepository->findBy([], ['id' => 'ASC'], 1)[0] ?? null;
+        Assert::nullOrIsInstanceOf($channel, ChannelInterface::class);
+
+        return $channel;
     }
 }

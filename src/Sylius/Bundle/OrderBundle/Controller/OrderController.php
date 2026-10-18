@@ -25,6 +25,8 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class OrderController extends ResourceController
@@ -38,6 +40,13 @@ class OrderController extends ResourceController
             $cart = $this->getOrderRepository()->findCartById($cart->getId());
         }
 
+        $this->getEventDispatcher()->dispatch(new GenericEvent($cart), SyliusCartEvents::CART_SUMMARY);
+        $event = $this->eventDispatcher->dispatch(ResourceActions::SHOW, $configuration, $cart);
+        $eventResponse = $event->getResponse();
+        if (null !== $eventResponse) {
+            return $eventResponse;
+        }
+
         if (!$configuration->isHtmlRequest()) {
             return $this->viewHandler->handle($configuration, View::create($cart));
         }
@@ -49,7 +58,7 @@ class OrderController extends ResourceController
             [
                 'cart' => $cart,
                 'form' => $form->createView(),
-            ]
+            ],
         );
     }
 
@@ -67,7 +76,7 @@ class OrderController extends ResourceController
             $configuration->getTemplate('summary.html'),
             [
                 'cart' => $cart,
-            ]
+            ],
         );
     }
 
@@ -112,6 +121,11 @@ class OrderController extends ResourceController
             return $this->redirectHandler->redirectToResource($configuration, $resource);
         }
 
+        if ($form->isSubmitted() && !$form->isValid()) {
+            $this->resetChangesOnCart($resource);
+            $this->addFlash('error', 'sylius.cart.not_recalculated');
+        }
+
         if (!$configuration->isHtmlRequest()) {
             return $this->viewHandler->handle($configuration, View::create($form, Response::HTTP_BAD_REQUEST));
         }
@@ -123,8 +137,25 @@ class OrderController extends ResourceController
                 $this->metadata->getName() => $resource,
                 'form' => $form->createView(),
                 'cart' => $resource,
-            ]
+            ],
         );
+    }
+
+    protected function addFlash(string $type, $message): void
+    {
+        /** @var SessionInterface $session */
+        $session = $this->get('request_stack')->getSession();
+        /** @var FlashBagInterface $flashBag */
+        $flashBag = $session->getBag('flashes');
+        $flashBag->add($type, $message);
+    }
+
+    private function resetChangesOnCart(OrderInterface $cart): void
+    {
+        $this->manager->refresh($cart);
+        foreach ($cart->getItems() as $item) {
+            $this->manager->refresh($item);
+        }
     }
 
     /**

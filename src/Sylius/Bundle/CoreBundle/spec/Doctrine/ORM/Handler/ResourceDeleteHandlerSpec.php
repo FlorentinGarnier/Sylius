@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace spec\Sylius\Bundle\CoreBundle\Doctrine\ORM\Handler;
 
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMException;
 use PhpSpec\ObjectBehavior;
@@ -37,7 +38,7 @@ final class ResourceDeleteHandlerSpec extends ObjectBehavior
         ResourceDeleteHandlerInterface $decoratedHandler,
         EntityManagerInterface $entityManager,
         RepositoryInterface $repository,
-        ResourceInterface $resource
+        ResourceInterface $resource,
     ): void {
         $entityManager->beginTransaction()->shouldBeCalled();
         $decoratedHandler->handle($resource, $repository)->shouldBeCalled();
@@ -46,11 +47,25 @@ final class ResourceDeleteHandlerSpec extends ObjectBehavior
         $this->handle($resource, $repository);
     }
 
+    function it_throws_delete_handling_exception_if_foreign_key_constraint_violation_exception_occurs_while_deleting_resource(
+        ResourceDeleteHandlerInterface $decoratedHandler,
+        EntityManagerInterface $entityManager,
+        RepositoryInterface $repository,
+        ResourceInterface $resource,
+    ): void {
+        $entityManager->beginTransaction()->shouldBeCalled();
+        $decoratedHandler->handle($resource, $repository)->willThrow(ForeignKeyConstraintViolationException::class);
+        $entityManager->commit()->shouldNotBeCalled();
+        $entityManager->rollback()->shouldBeCalled();
+
+        $this->shouldThrow(DeleteHandlingException::class)->during('handle', [$resource, $repository]);
+    }
+
     function it_throws_delete_handling_exception_if_something_gone_wrong_with_orm_while_deleting_resource(
         ResourceDeleteHandlerInterface $decoratedHandler,
         EntityManagerInterface $entityManager,
         RepositoryInterface $repository,
-        ResourceInterface $resource
+        ResourceInterface $resource,
     ): void {
         $entityManager->beginTransaction()->shouldBeCalled();
         $decoratedHandler->handle($resource, $repository)->willThrow(ORMException::class);

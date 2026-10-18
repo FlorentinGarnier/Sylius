@@ -21,17 +21,13 @@ use Symfony\Component\Routing\RouterInterface;
 
 class ShowPage extends SymfonyPage implements ShowPageInterface
 {
-    private TableAccessorInterface $tableAccessor;
-
     public function __construct(
         Session $session,
         $minkParameters,
         RouterInterface $router,
-        TableAccessorInterface $tableAccessor
+        private TableAccessorInterface $tableAccessor,
     ) {
         parent::__construct($session, $minkParameters, $router);
-
-        $this->tableAccessor = $tableAccessor;
     }
 
     public function getRouteName(): string
@@ -52,7 +48,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         string $street,
         string $postcode,
         string $city,
-        string $countryName
+        string $countryName,
     ): bool {
         $shippingAddressText = $this->getElement('shipping_address')->getText();
 
@@ -64,7 +60,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         string $street,
         string $postcode,
         string $city,
-        string $countryName
+        string $countryName,
     ): bool {
         $billingAddressText = $this->getElement('billing_address')->getText();
 
@@ -190,7 +186,7 @@ class ShowPage extends SymfonyPage implements ShowPageInterface
         string $street,
         string $postcode,
         string $city,
-        string $countryName
+        string $countryName,
     ): bool {
         return
             (stripos($elementText, $customerName) !== false) &&

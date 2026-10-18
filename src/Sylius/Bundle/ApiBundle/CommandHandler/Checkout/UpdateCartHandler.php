@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\ApiBundle\CommandHandler\Checkout;
 
-use Sylius\Bundle\ApiBundle\Assigner\OrderPromoCodeAssignerInterface;
+use Sylius\Bundle\ApiBundle\Assigner\OrderPromotionCodeAssignerInterface;
 use Sylius\Bundle\ApiBundle\Command\Checkout\UpdateCart;
 use Sylius\Bundle\ApiBundle\Modifier\OrderAddressModifierInterface;
-use Sylius\Bundle\ApiBundle\Provider\CustomerProviderInterface;
+use Sylius\Bundle\CoreBundle\Resolver\CustomerResolverInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
@@ -28,8 +28,8 @@ final class UpdateCartHandler implements MessageHandlerInterface
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
         private OrderAddressModifierInterface $orderAddressModifier,
-        private OrderPromoCodeAssignerInterface $orderPromoCodeAssigner,
-        private CustomerProviderInterface $customerProvider
+        private OrderPromotionCodeAssignerInterface $orderPromotionCodeAssigner,
+        private CustomerResolverInterface $customerResolver,
     ) {
     }
 
@@ -42,18 +42,16 @@ final class UpdateCartHandler implements MessageHandlerInterface
         Assert::notNull($order, sprintf('Order with %s token has not been found.', $tokenValue));
 
         if ($updateCart->getEmail()) {
-            $order->setCustomer($this->customerProvider->provide($updateCart->getEmail()));
+            $order->setCustomer($this->customerResolver->resolve($updateCart->getEmail()));
         }
 
-        if ($updateCart->getBillingAddress()) {
-            $order = $this->orderAddressModifier->modify(
-                $order,
-                $updateCart->getBillingAddress(),
-                $updateCart->getShippingAddress()
-            );
+        $billingAddress = $updateCart->getBillingAddress();
+        $shippingAddress = $updateCart->getShippingAddress();
+        if ($billingAddress || $shippingAddress) {
+            $order = $this->orderAddressModifier->modify($order, $billingAddress, $shippingAddress);
         }
 
-        $order = $this->orderPromoCodeAssigner->assign($order, $updateCart->getCouponCode());
+        $order = $this->orderPromotionCodeAssigner->assign($order, $updateCart->getCouponCode());
 
         return $order;
     }

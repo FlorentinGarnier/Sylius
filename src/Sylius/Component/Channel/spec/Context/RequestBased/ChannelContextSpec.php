@@ -37,13 +37,9 @@ final class ChannelContextSpec extends ObjectBehavior
         RequestResolverInterface $requestResolver,
         RequestStack $requestStack,
         Request $masterRequest,
-        ChannelInterface $channel
+        ChannelInterface $channel,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn($masterRequest);
-        } else {
-            $requestStack->getMasterRequest()->willReturn($masterRequest);
-        }
+        $requestStack->getMainRequest()->willReturn($masterRequest);
 
         $requestResolver->findChannel($masterRequest)->willReturn($channel);
 
@@ -53,13 +49,9 @@ final class ChannelContextSpec extends ObjectBehavior
     function it_throws_a_channel_not_found_exception_if_request_resolver_returns_null(
         RequestResolverInterface $requestResolver,
         RequestStack $requestStack,
-        Request $masterRequest
+        Request $masterRequest,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn($masterRequest);
-        } else {
-            $requestStack->getMasterRequest()->willReturn($masterRequest);
-        }
+        $requestStack->getMainRequest()->willReturn($masterRequest);
 
         $requestResolver->findChannel($masterRequest)->willReturn(null);
 
@@ -67,13 +59,9 @@ final class ChannelContextSpec extends ObjectBehavior
     }
 
     function it_throws_a_channel_not_found_exception_if_there_is_no_master_request(
-        RequestStack $requestStack
+        RequestStack $requestStack,
     ): void {
-        if (\method_exists(RequestStack::class, 'getMainRequest')) {
-            $requestStack->getMainRequest()->willReturn(null);
-        } else {
-            $requestStack->getMasterRequest()->willReturn(null);
-        }
+        $requestStack->getMainRequest()->willReturn(null);
 
         $this->shouldThrow(ChannelNotFoundException::class)->during('getChannel');
     }

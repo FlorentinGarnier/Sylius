@@ -28,32 +28,14 @@ use Webmozart\Assert\Assert;
 
 final class PaymentContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private PaymentMethodRepositoryInterface $paymentMethodRepository;
-
-    private ExampleFactoryInterface $paymentMethodExampleFactory;
-
-    private FactoryInterface $paymentMethodTranslationFactory;
-
-    private ObjectManager $paymentMethodManager;
-
-    private array $gatewayFactories;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        PaymentMethodRepositoryInterface $paymentMethodRepository,
-        ExampleFactoryInterface $paymentMethodExampleFactory,
-        FactoryInterface $paymentMethodTranslationFactory,
-        ObjectManager $paymentMethodManager,
-        array $gatewayFactories
+        private SharedStorageInterface $sharedStorage,
+        private PaymentMethodRepositoryInterface $paymentMethodRepository,
+        private ExampleFactoryInterface $paymentMethodExampleFactory,
+        private FactoryInterface $paymentMethodTranslationFactory,
+        private ObjectManager $paymentMethodManager,
+        private array $gatewayFactories,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->paymentMethodRepository = $paymentMethodRepository;
-        $this->paymentMethodExampleFactory = $paymentMethodExampleFactory;
-        $this->paymentMethodTranslationFactory = $paymentMethodTranslationFactory;
-        $this->paymentMethodManager = $paymentMethodManager;
-        $this->gatewayFactories = $gatewayFactories;
     }
 
     /**
@@ -90,7 +72,7 @@ final class PaymentContext implements Context
      */
     public function theStoreHasPaymentMethodWithCodeAndPaypalExpressCheckoutGateway(
         $paymentMethodName,
-        $paymentMethodCode
+        $paymentMethodCode,
     ) {
         $paymentMethod = $this->createPaymentMethod($paymentMethodName, $paymentMethodCode, 'Paypal Express Checkout');
         $paymentMethod->getGatewayConfig()->setConfig([
@@ -122,6 +104,7 @@ final class PaymentContext implements Context
     /**
      * @Given the payment method :paymentMethod is disabled
      * @Given /^(this payment method) has been disabled$/
+     * @When the payment method :paymentMethod gets disabled
      */
     public function theStoreHasAPaymentMethodDisabled(PaymentMethodInterface $paymentMethod)
     {
@@ -170,7 +153,7 @@ final class PaymentContext implements Context
             StringInflector::nameToUppercaseCode($paymentMethodName),
             'Offline',
             'Payment method',
-            false
+            false,
         );
 
         $paymentMethod->addChannel($channel);
@@ -202,7 +185,7 @@ final class PaymentContext implements Context
         $gatewayFactory = 'Offline',
         $description = '',
         $addForCurrentChannel = true,
-        $position = null
+        $position = null,
     ) {
         $gatewayFactory = array_search($gatewayFactory, $this->gatewayFactories);
 

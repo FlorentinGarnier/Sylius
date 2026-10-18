@@ -25,24 +25,12 @@ use Sylius\Component\Review\Model\ReviewInterface;
 
 final class ProductReviewContext implements Context
 {
-    private SharedStorageInterface $sharedStorage;
-
-    private \Sylius\Component\Resource\Factory\FactoryInterface $productReviewFactory;
-
-    private RepositoryInterface $productReviewRepository;
-
-    private StateMachineFactoryInterface $stateMachineFactory;
-
     public function __construct(
-        SharedStorageInterface $sharedStorage,
-        FactoryInterface $productReviewFactory,
-        RepositoryInterface $productReviewRepository,
-        StateMachineFactoryInterface $stateMachineFactory
+        private SharedStorageInterface $sharedStorage,
+        private FactoryInterface $productReviewFactory,
+        private RepositoryInterface $productReviewRepository,
+        private StateMachineFactoryInterface $stateMachineFactory,
     ) {
-        $this->sharedStorage = $sharedStorage;
-        $this->productReviewFactory = $productReviewFactory;
-        $this->productReviewRepository = $productReviewRepository;
-        $this->stateMachineFactory = $stateMachineFactory;
     }
 
     /**
@@ -63,7 +51,7 @@ final class ProductReviewContext implements Context
         $title,
         $rating,
         CustomerInterface $customer,
-        $daysSinceCreation = null
+        $daysSinceCreation = null,
     ) {
         $review = $this->createProductReview($product, $title, $rating, $title, $customer);
         if (null !== $daysSinceCreation) {
@@ -81,7 +69,7 @@ final class ProductReviewContext implements Context
         $title,
         $rating,
         $comment,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ) {
         $review = $this->createProductReview($product, $title, $rating, $comment, $customer);
 
@@ -95,7 +83,7 @@ final class ProductReviewContext implements Context
         ProductInterface $product,
         $title,
         $rating,
-        CustomerInterface $customer
+        CustomerInterface $customer,
     ) {
         $review = $this->createProductReview($product, $title, $rating, $title, $customer, null);
 
@@ -149,7 +137,7 @@ final class ProductReviewContext implements Context
         $rating,
         $comment,
         CustomerInterface $customer = null,
-        $transition = ProductReviewTransitions::TRANSITION_ACCEPT
+        $transition = ProductReviewTransitions::TRANSITION_ACCEPT,
     ) {
         /** @var ReviewInterface $review */
         $review = $this->productReviewFactory->createNew();

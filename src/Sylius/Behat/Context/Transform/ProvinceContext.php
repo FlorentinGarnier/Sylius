@@ -20,11 +20,8 @@ use Webmozart\Assert\Assert;
 
 final class ProvinceContext implements Context
 {
-    private RepositoryInterface $provinceRepository;
-
-    public function __construct(RepositoryInterface $provinceRepository)
+    public function __construct(private RepositoryInterface $provinceRepository)
     {
-        $this->provinceRepository = $provinceRepository;
     }
 
     /**
@@ -39,9 +36,17 @@ final class ProvinceContext implements Context
         $province = $this->provinceRepository->findOneBy(['name' => $provinceName]);
         Assert::notNull(
             $province,
-            sprintf('Province with name "%s" does not exist', $provinceName)
+            sprintf('Province with name "%s" does not exist', $provinceName),
         );
 
         return $province;
+    }
+
+    /**
+     * @Transform /^"([^"]*)" and "([^"]*)" provinces$/
+     */
+    public function getProvincesByName(string ...$provinceNames): array
+    {
+        return $this->provinceRepository->findBy(['name' => $provinceNames]);
     }
 }

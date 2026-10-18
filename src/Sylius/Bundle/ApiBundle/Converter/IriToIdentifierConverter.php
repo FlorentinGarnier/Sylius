@@ -33,7 +33,7 @@ final class IriToIdentifierConverter implements IriToIdentifierConverterInterfac
 
     public function __construct(
         private RouterInterface $router,
-        IdentifierConverterInterface $identifierConverter
+        IdentifierConverterInterface $identifierConverter,
     ) {
         $this->identifierConverter = $identifierConverter;
     }
@@ -80,11 +80,11 @@ final class IriToIdentifierConverter implements IriToIdentifierConverterInterfac
         }
 
         try {
-            $this->router->match($fieldValue);
+            $parameters = $this->router->match($fieldValue);
         } catch (RoutingExceptionInterface) {
             return false;
         }
 
-        return true;
+        return isset($parameters['_api_resource_class']);
     }
 }

@@ -20,6 +20,7 @@ use Sylius\Component\Core\OrderCheckoutStates;
 use Sylius\Component\Core\OrderPaymentStates;
 use Sylius\Component\Core\OrderShippingStates;
 use Sylius\Component\Customer\Model\CustomerInterface as BaseCustomerInterface;
+use Sylius\Component\Order\Model\AdjustmentInterface as BaseAdjustmentInterface;
 use Sylius\Component\Order\Model\Order as BaseOrder;
 use Sylius\Component\Payment\Model\PaymentInterface as BasePaymentInterface;
 use Sylius\Component\Promotion\Model\PromotionCouponInterface as BaseCouponInterface;
@@ -29,24 +30,16 @@ use Webmozart\Assert\Assert;
 
 class Order extends BaseOrder implements OrderInterface
 {
-    /**
-     * @var CustomerInterface|null
-     */
+    /** @var CustomerInterface|null */
     protected $customer;
 
-    /**
-     * @var ChannelInterface|null
-     */
+    /** @var ChannelInterface|null */
     protected $channel;
 
-    /**
-     * @var AddressInterface|null
-     */
+    /** @var AddressInterface|null */
     protected $shippingAddress;
 
-    /**
-     * @var AddressInterface|null
-     */
+    /** @var AddressInterface|null */
     protected $billingAddress;
 
     /**
@@ -63,34 +56,22 @@ class Order extends BaseOrder implements OrderInterface
      */
     protected $shipments;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $currencyCode;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $localeCode;
 
-    /**
-     * @var BaseCouponInterface|null
-     */
+    /** @var BaseCouponInterface|null */
     protected $promotionCoupon;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $checkoutState = OrderCheckoutStates::STATE_CART;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $paymentState = OrderPaymentStates::STATE_CART;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $shippingState = OrderShippingStates::STATE_CART;
 
     /**
@@ -100,14 +81,10 @@ class Order extends BaseOrder implements OrderInterface
      */
     protected $promotions;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $tokenValue;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $customerIp;
 
     protected bool $createdByGuest = true;
@@ -138,6 +115,12 @@ class Order extends BaseOrder implements OrderInterface
         $this->customer = $customer;
     }
 
+    public function setCustomerWithAuthorization(?BaseCustomerInterface $customer): void
+    {
+        $this->setCustomer($customer);
+        $this->createdByGuest = false;
+    }
+
     public function getChannel(): ?BaseChannelInterface
     {
         return $this->channel;
@@ -145,6 +128,7 @@ class Order extends BaseOrder implements OrderInterface
 
     public function setChannel(?BaseChannelInterface $channel): void
     {
+        Assert::isInstanceOf($channel, ChannelInterface::class);
         $this->channel = $channel;
     }
 
@@ -225,6 +209,7 @@ class Order extends BaseOrder implements OrderInterface
      */
     public function getPayments(): Collection
     {
+        /** @phpstan-ignore-next-line */
         return $this->payments;
     }
 
@@ -315,6 +300,13 @@ class Order extends BaseOrder implements OrderInterface
 
     public function removeShipments(): void
     {
+        // Disassociate OrderItemUnit from all shipments before removal
+        foreach ($this->shipments as $shipment) {
+            foreach ($shipment->getUnits() as $unit) {
+                $shipment->removeUnit($unit);
+            }
+        }
+
         $this->shipments->clear();
     }
 
@@ -419,6 +411,24 @@ class Order extends BaseOrder implements OrderInterface
         return $taxTotal;
     }
 
+    public function getTaxExcludedTotal(): int
+    {
+        return array_reduce(
+            $this->getAdjustmentsRecursively(AdjustmentInterface::TAX_ADJUSTMENT)->toArray(),
+            static fn (int $total, BaseAdjustmentInterface $adjustment) => !$adjustment->isNeutral() ? $total + $adjustment->getAmount() : $total,
+            0,
+        );
+    }
+
+    public function getTaxIncludedTotal(): int
+    {
+        return array_reduce(
+            $this->getAdjustmentsRecursively(AdjustmentInterface::TAX_ADJUSTMENT)->toArray(),
+            static fn (int $total, BaseAdjustmentInterface $adjustment) => $adjustment->isNeutral() ? $total + $adjustment->getAmount() : $total,
+            0,
+        );
+    }
+
     /**
      * Returns shipping fee together with taxes decreased by shipping discount.
      */
@@ -477,13 +487,22 @@ class Order extends BaseOrder implements OrderInterface
         return $total;
     }
 
-    public function getCreatedByGuest(): bool
+    public function isCreatedByGuest(): bool
     {
         return $this->createdByGuest;
     }
 
+    public function getCreatedByGuest(): bool
+    {
+        @trigger_error('This method is deprecated since Sylius 1.12 and it will be removed in Sylius 2.0. Please use `isCreatedByGuest` instead.');
+
+        return $this->isCreatedByGuest();
+    }
+
     public function setCreatedByGuest(bool $createdByGuest): void
     {
+        @trigger_error('This method is deprecated since Sylius 1.12 and it will be removed in Sylius 2.0. This flag should be changed only through `setCustomerWithAuthorization` method.');
+
         $this->createdByGuest = $createdByGuest;
     }
 }

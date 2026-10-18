@@ -21,9 +21,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-/**
- * @experimental
- */
 final class DebugTemplateEventCommand extends Command
 {
     protected static $defaultName = 'sylius:debug:template-event';
@@ -59,14 +56,14 @@ final class DebugTemplateEventCommand extends Command
         $io->table(
             ['Block name', 'Template', 'Priority', 'Enabled'],
             array_map(
-                static fn(TemplateBlock $templateBlock): array => [
+                static fn (TemplateBlock $templateBlock): array => [
                     $templateBlock->getName(),
                     $templateBlock->getTemplate(),
                     $templateBlock->getPriority(),
                     $templateBlock->isEnabled() ? 'TRUE' : 'FALSE',
                 ],
-                $this->templateBlockRegistry->all()[$eventName] ?? []
-            )
+                $this->templateBlockRegistry->all()[$eventName] ?? [],
+            ),
         );
 
         return 0;

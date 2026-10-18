@@ -21,6 +21,8 @@ class GetStatus extends BaseGetStatus
     /**
      * @psalm-suppress NonInvariantDocblockPropertyType
      *
+     * @phpstan-ignore-next-line
+     *
      * @var string
      */
     protected $status;

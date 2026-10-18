@@ -26,7 +26,7 @@ final class BlameCartHandler implements MessageHandlerInterface
     public function __construct(
         private UserRepositoryInterface $shopUserRepository,
         private OrderRepositoryInterface $orderRepository,
-        private OrderProcessorInterface $orderProcessor
+        private OrderProcessorInterface $orderProcessor,
     ) {
     }
 
@@ -50,7 +50,7 @@ final class BlameCartHandler implements MessageHandlerInterface
             throw new \InvalidArgumentException('There is an assigned customer to this cart');
         }
 
-        $cart->setCustomer($user->getCustomer());
+        $cart->setCustomerWithAuthorization($user->getCustomer());
 
         $this->orderProcessor->process($cart);
     }

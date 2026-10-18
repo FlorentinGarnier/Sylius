@@ -16,19 +16,16 @@ namespace Sylius\Behat\Context\Api\Admin;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Component\Shipping\Model\ShippingCategoryInterface;
 use Webmozart\Assert\Assert;
 
 final class ManagingShippingCategoriesContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    public function __construct(ApiClientInterface $client, ResponseCheckerInterface $responseChecker)
-    {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
+    public function __construct(
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+    ) {
     }
 
     /**
@@ -36,7 +33,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iWantToCreateANewShippingCategory(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::SHIPPING_CATEGORIES);
     }
 
     /**
@@ -44,7 +41,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iWantToModifyAShippingCategory(ShippingCategoryInterface $shippingCategory): void
     {
-        $this->client->buildUpdateRequest($shippingCategory->getCode());
+        $this->client->buildUpdateRequest(Resources::SHIPPING_CATEGORIES, $shippingCategory->getCode());
     }
 
     /**
@@ -60,7 +57,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iDeleteShippingCategory(ShippingCategoryInterface $shippingCategory): void
     {
-        $this->client->delete($shippingCategory->getCode());
+        $this->client->delete(Resources::SHIPPING_CATEGORIES, $shippingCategory->getCode());
     }
 
     /**
@@ -68,7 +65,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iBrowseShippingCategories(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::SHIPPING_CATEGORIES);
     }
 
     /**
@@ -99,7 +96,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iModifyAShippingCategory(ShippingCategoryInterface $shippingCategory): void
     {
-        $this->client->buildUpdateRequest($shippingCategory->getCode());
+        $this->client->buildUpdateRequest(Resources::SHIPPING_CATEGORIES, $shippingCategory->getCode());
     }
 
     /**
@@ -111,21 +108,13 @@ final class ManagingShippingCategoriesContext implements Context
     }
 
     /**
-     * @When I save my changes
-     */
-    public function iSaveMyChanges(): void
-    {
-        $this->client->update();
-    }
-
-    /**
      * @Then I should be notified that shipping category with this code already exists
      */
     public function iShouldBeNotifiedThatShippingCategoryWithThisCodeAlreadyExists(): void
     {
         Assert::same(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            'code: The shipping category with given code already exists.'
+            'code: The shipping category with given code already exists.',
         );
     }
 
@@ -136,7 +125,7 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::same(
             $this->responseChecker->getError($this->client->getLastResponse()),
-            sprintf('%s: Please enter shipping category %s.', $element, $element)
+            sprintf('%s: Please enter shipping category %s.', $element, $element),
         );
     }
 
@@ -146,7 +135,7 @@ final class ManagingShippingCategoriesContext implements Context
      */
     public function iShouldSeeShippingCategoriesInTheList(int $count = 1): void
     {
-        Assert::same($this->responseChecker->countCollectionItems($this->client->index()), $count);
+        Assert::same($this->responseChecker->countCollectionItems($this->client->index(Resources::SHIPPING_CATEGORIES)), $count);
     }
 
     /**
@@ -157,7 +146,7 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::true(
             $this->isItemOnIndex('name', $shippingCategoryName),
-            sprintf('Shipping category with name %s does not exists', $shippingCategoryName)
+            sprintf('Shipping category with name %s does not exists', $shippingCategoryName),
         );
     }
 
@@ -168,7 +157,7 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::false(
             $this->isItemOnIndex('name', $name),
-            sprintf('Shipping category with name %s exists', $name)
+            sprintf('Shipping category with name %s exists', $name),
         );
     }
 
@@ -176,12 +165,12 @@ final class ManagingShippingCategoriesContext implements Context
      * @Then /^(this shipping category) should no longer exist in the registry$/
      */
     public function thisShippingCategoryShouldNoLongerExistInTheRegistry(
-        ShippingCategoryInterface $shippingCategory
+        ShippingCategoryInterface $shippingCategory,
     ): void {
         $shippingCategoryName = $shippingCategory->getName();
         Assert::false(
             $this->isItemOnIndex('name', $shippingCategoryName),
-            sprintf('Shipping category with name %s exist', $shippingCategoryName)
+            sprintf('Shipping category with name %s exist', $shippingCategoryName),
         );
     }
 
@@ -194,7 +183,7 @@ final class ManagingShippingCategoriesContext implements Context
 
         Assert::false(
             $this->responseChecker->hasValue($this->client->update(), 'code', 'NEW_CODE'),
-            'The shipping category code should not be changed to "NEW_CODE", but it is'
+            'The shipping category code should not be changed to "NEW_CODE", but it is',
         );
     }
 
@@ -204,8 +193,8 @@ final class ManagingShippingCategoriesContext implements Context
     public function thereShouldStillBeOnlyOneShippingCategoryWith(string $code): void
     {
         Assert::same(
-            count($this->responseChecker->getCollectionItemsWithValue($this->client->index(), 'code', $code)),
-            1
+            count($this->responseChecker->getCollectionItemsWithValue($this->client->index(Resources::SHIPPING_CATEGORIES), 'code', $code)),
+            1,
         );
     }
 
@@ -216,7 +205,7 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::true(
             $this->responseChecker->hasValue($this->client->getLastResponse(), 'name', $name),
-            sprintf('Shipping category with name %s does not exists', $name)
+            sprintf('Shipping category with name %s does not exists', $name),
         );
     }
 
@@ -227,18 +216,7 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Shipping category could not be created'
-        );
-    }
-
-    /**
-     * @Then I should be notified that it has been successfully edited
-     */
-    public function iShouldBeNotifiedThatItHasBeenSuccessfullyEdited(): void
-    {
-        Assert::true(
-            $this->responseChecker->isUpdateSuccessful($this->client->getLastResponse()),
-            'Shipping category could not be edited'
+            'Shipping category could not be created',
         );
     }
 
@@ -249,13 +227,13 @@ final class ManagingShippingCategoriesContext implements Context
     {
         Assert::true(
             $this->responseChecker->isDeletionSuccessful($this->client->getLastResponse()),
-            'Shipping category could not be deleted'
+            'Shipping category could not be deleted',
         );
     }
 
     private function isItemOnIndex(string $property, string $value): bool
     {
-        $this->client->index();
+        $this->client->index(Resources::SHIPPING_CATEGORIES);
 
         return $this->responseChecker->hasItemWithValue($this->client->getLastResponse(), $property, $value);
     }

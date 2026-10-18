@@ -22,14 +22,10 @@ use Webmozart\Assert\Assert;
 
 final class CheckoutPaymentContext implements Context
 {
-    private SelectPaymentPageInterface $selectPaymentPage;
-
-    private CompletePageInterface $completePage;
-
-    public function __construct(SelectPaymentPageInterface $selectPaymentPage, CompletePageInterface $completePage)
-    {
-        $this->selectPaymentPage = $selectPaymentPage;
-        $this->completePage = $completePage;
+    public function __construct(
+        private SelectPaymentPageInterface $selectPaymentPage,
+        private CompletePageInterface $completePage,
+    ) {
     }
 
     /**
@@ -161,7 +157,7 @@ final class CheckoutPaymentContext implements Context
 
         try {
             $this->selectPaymentPage->nextStep();
-        } catch (ElementNotFoundException $exception) {
+        } catch (ElementNotFoundException) {
             return;
         }
 
@@ -176,7 +172,7 @@ final class CheckoutPaymentContext implements Context
         foreach ($paymentMethodsNames as $paymentMethodName) {
             Assert::true(
                 $this->selectPaymentPage->hasPaymentMethod($paymentMethodName),
-                sprintf('There is no %s payment method', $paymentMethodName)
+                sprintf('There is no %s payment method', $paymentMethodName),
             );
         }
     }
@@ -189,7 +185,7 @@ final class CheckoutPaymentContext implements Context
         foreach ($paymentMethodsNames as $paymentMethodName) {
             Assert::false(
                 $this->selectPaymentPage->hasPaymentMethod($paymentMethodName),
-                sprintf('There is %s payment method', $paymentMethodName)
+                sprintf('There is %s payment method', $paymentMethodName),
             );
         }
     }

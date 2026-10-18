@@ -25,7 +25,7 @@ final class FakeChannelContext implements ChannelContextInterface
     public function __construct(
         private FakeChannelCodeProviderInterface $fakeChannelCodeProvider,
         private ChannelRepositoryInterface $channelRepository,
-        private RequestStack $requestStack
+        private RequestStack $requestStack,
     ) {
     }
 
@@ -51,11 +51,7 @@ final class FakeChannelContext implements ChannelContextInterface
      */
     private function getMainRequest(): Request
     {
-        if (\method_exists($this->requestStack, 'getMainRequest')) {
-            $mainRequest = $this->requestStack->getMainRequest();
-        } else {
-            $mainRequest = $this->requestStack->getMasterRequest();
-        }
+        $mainRequest = $this->requestStack->getMainRequest();
         if (null === $mainRequest) {
             throw new ChannelNotFoundException();
         }

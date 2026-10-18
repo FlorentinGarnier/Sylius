@@ -19,7 +19,6 @@ use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Customer\Context\CustomerContextInterface;
 use Sylius\Component\Locale\Context\LocaleContextInterface;
-use Symfony\Bundle\FrameworkBundle\Templating\EngineInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,11 +33,11 @@ final class ContactController
     public function __construct(
         private RouterInterface $router,
         private FormFactoryInterface $formFactory,
-        private EngineInterface|Environment $templatingEngine,
+        private Environment $templatingEngine,
         private ChannelContextInterface $channelContext,
         private CustomerContextInterface $customerContext,
         private LocaleContextInterface $localeContext,
-        private ContactEmailManagerInterface $contactEmailManager
+        private ContactEmailManagerInterface $contactEmailManager,
     ) {
     }
 
@@ -47,7 +46,7 @@ final class ContactController
         $formType = $this->getSyliusAttribute($request, 'form', ContactType::class);
         $form = $this->formFactory->create($formType, null, $this->getFormOptions());
 
-        if ($request->isMethod('POST') && $form->handleRequest($request)->isValid()) {
+        if ($request->isMethod('POST') && $form->handleRequest($request)->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
 
             $channel = $this->channelContext->getChannel();
@@ -61,7 +60,7 @@ final class ContactController
                 $errorMessage = $this->getSyliusAttribute(
                     $request,
                     'error_flash',
-                    'sylius.contact.request_error'
+                    'sylius.contact.request_error',
                 );
 
                 /** @var FlashBagInterface $flashBag */
@@ -77,7 +76,7 @@ final class ContactController
             $successMessage = $this->getSyliusAttribute(
                 $request,
                 'success_flash',
-                'sylius.contact.request_success'
+                'sylius.contact.request_success',
             );
 
             /** @var FlashBagInterface $flashBag */

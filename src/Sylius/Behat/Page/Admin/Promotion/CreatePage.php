@@ -19,6 +19,7 @@ use Sylius\Behat\Behaviour\NamesIt;
 use Sylius\Behat\Behaviour\SpecifiesItsCode;
 use Sylius\Behat\Page\Admin\Crud\CreatePage as BaseCreatePage;
 use Sylius\Behat\Service\AutocompleteHelper;
+use Sylius\Behat\Service\TabsHelper;
 use Webmozart\Assert\Assert;
 
 class CreatePage extends BaseCreatePage implements CreatePageInterface
@@ -26,15 +27,20 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
     use NamesIt;
     use SpecifiesItsCode;
 
+    public function specifyLabel(string $label, string $localeCode): void
+    {
+        $this->getDocument()->find('css', 'div[data-locale="' . $localeCode . '"]')->click();
+
+        $this->getDocument()->fillField(sprintf('sylius_promotion_translations_%s_label', $localeCode), $label);
+    }
+
     public function addRule(?string $ruleName): void
     {
         $count = count($this->getCollectionItems('rules'));
 
         $this->getDocument()->clickLink('Add rule');
 
-        $this->getDocument()->waitFor(5, function () use ($count) {
-            return $count + 1 === count($this->getCollectionItems('rules'));
-        });
+        $this->getDocument()->waitFor(5, fn () => $count + 1 === count($this->getCollectionItems('rules')));
 
         if (null !== $ruleName) {
             $this->selectRuleOption('Type', $ruleName);
@@ -70,9 +76,9 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         $this->getLastCollectionItem('rules')->fillField($option, $value);
     }
 
-    public function fillRuleOptionForChannel(string $channelName, string $option, string $value): void
+    public function fillRuleOptionForChannel(string $channelCode, string $option, string $value): void
     {
-        $lastAction = $this->getChannelConfigurationOfLastRule($channelName);
+        $lastAction = $this->getChannelConfigurationOfLastRule($channelCode);
         $lastAction->fillField($option, $value);
     }
 
@@ -82,9 +88,7 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
 
         $this->getDocument()->clickLink('Add action');
 
-        $this->getDocument()->waitFor(5, function () use ($count) {
-            return $count + 1 === count($this->getCollectionItems('actions'));
-        });
+        $this->getDocument()->waitFor(5, fn () => $count + 1 === count($this->getCollectionItems('actions')));
 
         if (null !== $actionName) {
             $this->selectActionOption('Type', $actionName);
@@ -101,9 +105,9 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         $this->getLastCollectionItem('actions')->fillField($option, $value);
     }
 
-    public function fillActionOptionForChannel(string $channelName, string $option, string $value): void
+    public function fillActionOptionForChannel(string $channelCode, string $option, string $value): void
     {
-        $lastAction = $this->getChannelConfigurationOfLastAction($channelName);
+        $lastAction = $this->getChannelConfigurationOfLastAction($channelCode);
         $lastAction->fillField($option, $value);
     }
 
@@ -189,6 +193,18 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         return $this->hasElement('amount');
     }
 
+    public function hasLabel(string $label, string $localeCode): bool
+    {
+        $this->getDocument()->find('css', 'div[data-locale="' . $localeCode . '"]')->click();
+
+        $labelElement = $this->getDocument()->find('css', sprintf('label:contains("%s")', $label));
+        if (null === $labelElement) {
+            return false;
+        }
+
+        return $labelElement->hasClass(sprintf('sylius-locale-%s', $localeCode));
+    }
+
     protected function getDefinedElements(): array
     {
         return [
@@ -205,19 +221,25 @@ class CreatePage extends BaseCreatePage implements CreatePageInterface
         ];
     }
 
-    private function getChannelConfigurationOfLastAction(string $channelName): NodeElement
+    private function getChannelConfigurationOfLastAction(string $channelCode): NodeElement
     {
-        return $this
-            ->getLastCollectionItem('actions')
-            ->find('css', sprintf('[id$="configuration"] .field:contains("%s")', $channelName))
+        $lastAction = $this->getLastCollectionItem('actions');
+
+        TabsHelper::switchTab($this->getSession(), $lastAction, $channelCode);
+
+        return $lastAction
+            ->find('css', sprintf('[id^="sylius_promotion_actions_"][id$="_configuration_%s"]', $channelCode))
         ;
     }
 
-    private function getChannelConfigurationOfLastRule(string $channelName): NodeElement
+    private function getChannelConfigurationOfLastRule(string $channelCode): NodeElement
     {
-        return $this
-            ->getLastCollectionItem('rules')
-            ->find('css', sprintf('[id$="configuration"] .field:contains("%s")', $channelName))
+        $lastRule = $this->getLastCollectionItem('rules');
+
+        TabsHelper::switchTab($this->getSession(), $lastRule, $channelCode);
+
+        return $lastRule
+            ->find('css', sprintf('[id^="sylius_promotion_rules_"][id$="_configuration_%s"]', $channelCode))
         ;
     }
 

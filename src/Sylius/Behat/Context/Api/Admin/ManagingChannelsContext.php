@@ -17,6 +17,7 @@ use ApiPlatform\Core\Api\IriConverterInterface;
 use Behat\Behat\Context\Context;
 use Sylius\Behat\Client\ApiClientInterface;
 use Sylius\Behat\Client\ResponseCheckerInterface;
+use Sylius\Behat\Context\Api\Resources;
 use Sylius\Component\Addressing\Model\CountryInterface;
 use Sylius\Component\Core\Formatter\StringInflector;
 use Sylius\Component\Core\Model\ChannelInterface;
@@ -27,22 +28,13 @@ use Webmozart\Assert\Assert;
 
 final class ManagingChannelsContext implements Context
 {
-    private ApiClientInterface $client;
-
-    private ResponseCheckerInterface $responseChecker;
-
-    private IriConverterInterface $iriConverter;
-
     private array $shopBillingData = [];
 
     public function __construct(
-        ApiClientInterface $client,
-        ResponseCheckerInterface $responseChecker,
-        IriConverterInterface $iriConverter
+        private ApiClientInterface $client,
+        private ResponseCheckerInterface $responseChecker,
+        private IriConverterInterface $iriConverter,
     ) {
-        $this->client = $client;
-        $this->responseChecker = $responseChecker;
-        $this->iriConverter = $iriConverter;
     }
 
     /**
@@ -50,7 +42,15 @@ final class ManagingChannelsContext implements Context
      */
     public function iWantToCreateANewChannel(): void
     {
-        $this->client->buildCreateRequest();
+        $this->client->buildCreateRequest(Resources::CHANNELS);
+    }
+
+    /**
+     * @When I want to modify a channel :channel
+     */
+    public function iWantToModifyChannel(ChannelInterface $channel): void
+    {
+        $this->client->buildUpdateRequest(Resources::CHANNELS, $channel->getCode());
     }
 
     /**
@@ -69,7 +69,15 @@ final class ManagingChannelsContext implements Context
      */
     public function iChooseAsTheBaseCurrency(CurrencyInterface $currency): void
     {
-        $this->client->addRequestData('baseCurrency', $this->iriConverter->getIriFromItem($currency));
+        $this->client->addRequestData('baseCurrency', $this->iriConverter->getIriFromItemInSection($currency, 'admin'));
+    }
+
+    /**
+     * @When I make it available in :locale
+     */
+    public function iMakeItAvailableInLocale(LocaleInterface $locale): void
+    {
+        $this->client->addRequestData('locales', [$this->iriConverter->getIriFromItem($locale)]);
     }
 
     /**
@@ -77,7 +85,7 @@ final class ManagingChannelsContext implements Context
      */
     public function iChooseAsADefaultLocale(LocaleInterface $locale): void
     {
-        $this->client->addRequestData('defaultLocale', $this->iriConverter->getIriFromItem($locale));
+        $this->client->addRequestData('defaultLocale', $this->iriConverter->getIriFromItemInSection($locale, 'admin'));
     }
 
     /**
@@ -110,8 +118,8 @@ final class ManagingChannelsContext implements Context
     public function iChooseAndAsOperatingCountries(CountryInterface $country, CountryInterface $otherCountry): void
     {
         $this->client->addRequestData('countries', [
-            $this->iriConverter->getIriFromItem($country),
-            $this->iriConverter->getIriFromItem($otherCountry),
+            $this->iriConverter->getIriFromItemInSection($country, 'admin'),
+            $this->iriConverter->getIriFromItemInSection($otherCountry, 'admin'),
         ]);
     }
 
@@ -136,7 +144,7 @@ final class ManagingChannelsContext implements Context
      */
     public function iSpecifyMenuTaxonAs(TaxonInterface $taxon): void
     {
-        $this->client->addRequestData('menuTaxon', $this->iriConverter->getIriFromItem($taxon));
+        $this->client->addRequestData('menuTaxon', $this->iriConverter->getIriFromItemInSection($taxon, 'admin'));
     }
 
     /**
@@ -162,7 +170,7 @@ final class ManagingChannelsContext implements Context
         string $street,
         string $postcode,
         string $city,
-        CountryInterface $country
+        CountryInterface $country,
     ): void {
         $this->shopBillingData['street'] = $street;
         $this->shopBillingData['city'] = $city;
@@ -180,10 +188,11 @@ final class ManagingChannelsContext implements Context
 
     /**
      * @When I add it
+     * @When I try to add it
      */
     public function iAddIt(): void
     {
-        $this->client->addSubResourceData('shopBillingData', $this->shopBillingData);
+        $this->client->setSubResourceData('shopBillingData', $this->shopBillingData);
 
         $this->client->create();
     }
@@ -193,7 +202,45 @@ final class ManagingChannelsContext implements Context
      */
     public function iWantToBrowseChannels(): void
     {
-        $this->client->index();
+        $this->client->index(Resources::CHANNELS);
+    }
+
+    /**
+     * @When /^I choose (billing|shipping) address as a required address in the checkout$/
+     */
+    public function iChooseAddressAsARequiredAddressInTheCheckout(string $type): void
+    {
+        $this->client->addRequestData('shippingAddressInCheckoutRequired', $type === 'shipping');
+    }
+
+    /**
+     * @When /^I want to modify (this channel)$/
+     */
+    public function iWantToModifyThisChannel(ChannelInterface $channel): void
+    {
+        $this->client->buildUpdateRequest(Resources::CHANNELS, $channel->getCode());
+    }
+
+    /**
+     * @When /^I (enable|disable) showing the lowest price of discounted products$/
+     */
+    public function iEnableShowingTheLowestPriceOfDiscountedProducts(string $visible): void
+    {
+        $this->client->addRequestData(
+            'channelPriceHistoryConfig',
+            ['lowestPriceForDiscountedProductsVisible' => $visible === 'enable'],
+        );
+    }
+
+    /**
+     * @When /^I specify (-?\d+) days as the lowest price for discounted products checking period$/
+     */
+    public function iSpecifyDaysAsTheLowestPriceForDiscountedProductsCheckingPeriod(int $days): void
+    {
+        $this->client->addRequestData(
+            'channelPriceHistoryConfig',
+            ['lowestPriceForDiscountedProductsCheckingPeriod' => $days],
+        );
     }
 
     /**
@@ -202,8 +249,8 @@ final class ManagingChannelsContext implements Context
     public function iShouldBeNotifiedThatItHasBeenSuccessfullyCreated(): void
     {
         Assert::true(
-            $this->responseChecker->isCreationSuccessful($this->client->getLastResponse()),
-            'Channel could not be created'
+            $this->responseChecker->isCreationSuccessful($response = $this->client->getLastResponse()),
+            'Channel could not be created: ' . $response->getContent(),
         );
     }
 
@@ -214,8 +261,8 @@ final class ManagingChannelsContext implements Context
     public function theChannelShouldAppearInTheRegistry(string $name): void
     {
         Assert::true(
-            $this->responseChecker->hasItemWithValue($this->client->index(), 'name', $name),
-            sprintf('Channel with name %s does not exist', $name)
+            $this->responseChecker->hasItemWithValue($this->client->index(Resources::CHANNELS), 'name', $name),
+            sprintf('Channel with name %s does not exist', $name),
         );
     }
 
@@ -225,9 +272,9 @@ final class ManagingChannelsContext implements Context
     public function theChannelShouldHaveAsAMenuTaxon(ChannelInterface $channel, TaxonInterface $taxon): void
     {
         Assert::same(
-            $this->responseChecker->getValue($this->client->show($channel->getCode()), 'menuTaxon'),
-            $this->iriConverter->getIriFromItem($taxon),
-            sprintf('Channel %s does not have %s menu taxon', $channel->getName(), $taxon->getName())
+            $this->responseChecker->getValue($this->client->show(Resources::CHANNELS, $channel->getCode()), 'menuTaxon'),
+            $this->iriConverter->getIriFromItemInSection($taxon, 'admin'),
+            sprintf('Channel %s does not have %s menu taxon', $channel->getName(), $taxon->getName()),
         );
     }
 
@@ -237,5 +284,17 @@ final class ManagingChannelsContext implements Context
     public function iShouldSeeChannelsInTheList(int $count): void
     {
         Assert::same($this->responseChecker->countCollectionItems($this->client->getLastResponse()), $count);
+    }
+
+    /**
+     * @Then /^the required address in the checkout for this channel should be (billing|shipping)$/
+     */
+    public function theRequiredAddressInTheCheckoutForTheChannelShouldBe(string $type): void
+    {
+        Assert::true($this->responseChecker->hasValue(
+            $this->client->getLastResponse(),
+            'shippingAddressInCheckoutRequired',
+            $type === 'shipping',
+        ));
     }
 }

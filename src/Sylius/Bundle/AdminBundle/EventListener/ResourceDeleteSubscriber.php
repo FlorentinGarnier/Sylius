@@ -14,11 +14,12 @@ declare(strict_types=1);
 namespace Sylius\Bundle\AdminBundle\EventListener;
 
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
+use Sylius\Bundle\CoreBundle\Provider\FlashBagProvider;
 use Sylius\Component\Resource\ResourceActions;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -26,8 +27,13 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class ResourceDeleteSubscriber implements EventSubscriberInterface
 {
-    public function __construct(private UrlGeneratorInterface $router, private SessionInterface $session)
-    {
+    public function __construct(
+        private UrlGeneratorInterface $router,
+        private SessionInterface|RequestStack $requestStackOrSession,
+    ) {
+        if ($this->requestStackOrSession instanceof SessionInterface) {
+            trigger_deprecation('sylius/admin-bundle', '1.12', sprintf('Passing an instance of %s as constructor argument for %s is deprecated as of Sylius 1.12 and will be removed in 2.0. Pass an instance of %s instead.', SessionInterface::class, self::class, RequestStack::class));
+        }
     }
 
     public static function getSubscribedEvents(): array
@@ -47,6 +53,7 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
         if (\method_exists($event, 'isMainRequest')) {
             $isMainRequest = $event->isMainRequest();
         } else {
+            /** @phpstan-ignore-next-line */
             $isMainRequest = $event->isMasterRequest();
         }
         if (!$isMainRequest || 'html' !== $event->getRequest()->getRequestFormat()) {
@@ -70,9 +77,7 @@ final class ResourceDeleteSubscriber implements EventSubscriberInterface
             return;
         }
 
-        /** @var FlashBagInterface $flashBag */
-        $flashBag = $this->session->getBag('flashes');
-        $flashBag->add('error', [
+        FlashBagProvider::getFlashBag($this->requestStackOrSession)->add('error', [
             'message' => 'sylius.resource.delete_error',
             'parameters' => ['%resource%' => $resourceName],
         ]);

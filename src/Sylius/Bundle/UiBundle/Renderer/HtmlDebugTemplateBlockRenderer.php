@@ -15,9 +15,6 @@ namespace Sylius\Bundle\UiBundle\Renderer;
 
 use Sylius\Bundle\UiBundle\Registry\TemplateBlock;
 
-/**
- * @experimental
- */
 final class HtmlDebugTemplateBlockRenderer implements TemplateBlockRendererInterface
 {
     public function __construct(private TemplateBlockRendererInterface $templateBlockRenderer)
@@ -36,7 +33,7 @@ final class HtmlDebugTemplateBlockRenderer implements TemplateBlockRendererInter
                 $templateBlock->getEventName(),
                 $templateBlock->getName(),
                 $templateBlock->getTemplate(),
-                $templateBlock->getPriority()
+                $templateBlock->getPriority(),
             );
         }
 
@@ -46,7 +43,7 @@ final class HtmlDebugTemplateBlockRenderer implements TemplateBlockRendererInter
             $renderedParts[] = sprintf(
                 '<!-- END BLOCK | event name: "%s", block name: "%s" -->',
                 $templateBlock->getEventName(),
-                $templateBlock->getName()
+                $templateBlock->getName(),
             );
         }
 

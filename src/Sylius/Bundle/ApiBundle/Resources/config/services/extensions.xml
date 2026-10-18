@@ -38,12 +38,27 @@
             <tag name="api_platform.doctrine.orm.query_extension.collection" />
         </service>
 
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\ProductsByTaxonExtension">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.collection" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\OrdersByChannelExtension">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.collection" />
+        </service>
+
         <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\OrdersByLoggedInUserExtension">
             <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
             <tag name="api_platform.doctrine.orm.query_extension.collection" />
         </service>
 
         <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\ProductsWithEnableFlagExtension">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.collection" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\EnabledProductVariantsExtension">
             <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
             <tag name="api_platform.doctrine.orm.query_extension.collection" />
         </service>
@@ -68,18 +83,37 @@
             <tag name="api_platform.doctrine.orm.query_extension.collection" />
         </service>
 
+        <service
+            id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\RestrictingFilterEagerLoadingExtension"
+            decorates="api_platform.doctrine.orm.query_extension.filter_eager_loading"
+        >
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Doctrine\QueryCollectionExtension\RestrictingFilterEagerLoadingExtension.inner" />
+            <argument>%sylius_api.filter_eager_loading_extension.restricted_resources%</argument>
+        </service>
+
         <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\AddressItemExtension">
             <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
             <tag name="api_platform.doctrine.orm.query_extension.item" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\OrderGetMethodItemExtension">
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\OrderShopUserItemExtension">
             <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
             <tag name="api_platform.doctrine.orm.query_extension.item" />
         </service>
 
-        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\OrderMethodsItemExtension">
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\OrderVisitorItemExtension">
             <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.item" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryItemExtension\EnabledProductVariantItemExtension">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.item" />
+        </service>
+
+        <service id="Sylius\Bundle\ApiBundle\Doctrine\QueryExtension\ExchangeRateExtension">
+            <argument type="service" id="Sylius\Bundle\ApiBundle\Context\UserContextInterface" />
+            <tag name="api_platform.doctrine.orm.query_extension.collection" />
             <tag name="api_platform.doctrine.orm.query_extension.item" />
         </service>
     </services>

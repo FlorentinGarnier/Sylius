@@ -13,7 +13,9 @@ declare(strict_types=1);
 
 namespace Sylius\Behat\Page\Shop\Account\AddressBook;
 
+use Behat\Mink\Exception\DriverException;
 use FriendsOfBehat\PageObjectExtension\Page\SymfonyPage;
+use FriendsOfBehat\PageObjectExtension\Page\UnexpectedPageException;
 use Sylius\Behat\Service\JQueryHelper;
 
 class UpdatePage extends SymfonyPage implements UpdatePageInterface
@@ -92,10 +94,26 @@ class UpdatePage extends SymfonyPage implements UpdatePageInterface
         ]);
     }
 
+    protected function verifyStatusCode(): void
+    {
+        try {
+            $statusCode = $this->getSession()->getStatusCode();
+        } catch (DriverException) {
+            return; // Ignore drivers which cannot check the response status code
+        }
+
+        if (($statusCode >= 200 && $statusCode <= 299) || $statusCode === 422) {
+            return;
+        }
+
+        $currentUrl = $this->getSession()->getCurrentUrl();
+        $message = sprintf('Could not open the page: "%s". Received an error status code: %s', $currentUrl, $statusCode);
+
+        throw new UnexpectedPageException($message);
+    }
+
     private function waitForElement(int $timeout, string $elementName): void
     {
-        $this->getDocument()->waitFor($timeout, function () use ($elementName) {
-            return $this->hasElement($elementName);
-        });
+        $this->getDocument()->waitFor($timeout, fn () => $this->hasElement($elementName));
     }
 }

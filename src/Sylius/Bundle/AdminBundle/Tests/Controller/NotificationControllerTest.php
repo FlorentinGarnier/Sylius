@@ -13,12 +13,13 @@ declare(strict_types=1);
 
 namespace Sylius\Bundle\AdminBundle\Tests\Controller;
 
-use Prophecy\Prophecy\ObjectProphecy;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ConnectException;
 use Http\Message\MessageFactory;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
 use Prophecy\Prophecy\ProphecyInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -29,6 +30,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class NotificationControllerTest extends TestCase
 {
+    use ProphecyTrait;
+
     private ObjectProphecy $client;
 
     private ObjectProphecy $messageFactory;
@@ -90,7 +93,7 @@ final class NotificationControllerTest extends TestCase
             $this->client->reveal(),
             $this->messageFactory->reveal(),
             self::$hubUri,
-            'environment'
+            'environment',
         );
 
         parent::setUp();

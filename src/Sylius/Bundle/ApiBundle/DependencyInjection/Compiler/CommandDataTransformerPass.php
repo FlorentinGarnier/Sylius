@@ -28,7 +28,11 @@ final class CommandDataTransformerPass implements CompilerPassInterface
 
         $taggedServices = $container->findTaggedServiceIds('sylius.api.command_data_transformer');
 
-        foreach ($taggedServices as $key => $value) {
+        uasort($taggedServices, function (array $firstTag, array $secondTag) {
+            return ($secondTag[0]['priority'] ?? 0) <=> ($firstTag[0]['priority'] ?? 0);
+        });
+
+        foreach ($taggedServices as $key => $attributes) {
             $commandDataTransformersChainDefinition->addArgument(new Reference($key));
         }
 
@@ -36,7 +40,7 @@ final class CommandDataTransformerPass implements CompilerPassInterface
 
         $container->setDefinition(
             'sylius.api.data_transformer.command_aware_input_data_transformer',
-            $commandDataTransformersChainDefinition
+            $commandDataTransformersChainDefinition,
         );
     }
 }

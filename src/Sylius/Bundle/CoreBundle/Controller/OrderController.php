@@ -16,6 +16,9 @@ namespace Sylius\Bundle\CoreBundle\Controller;
 use FOS\RestBundle\View\View;
 use Sylius\Bundle\OrderBundle\Controller\OrderController as BaseOrderController;
 use Sylius\Component\Core\Repository\OrderRepositoryInterface;
+use Sylius\Component\Order\SyliusCartEvents;
+use Sylius\Component\Resource\ResourceActions;
+use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Webmozart\Assert\Assert;
@@ -35,6 +38,13 @@ class OrderController extends BaseOrderController
             $cart = $orderRepository->findCartForSummary($cart->getId());
         }
 
+        $this->getEventDispatcher()->dispatch(new GenericEvent($cart), SyliusCartEvents::CART_SUMMARY);
+        $event = $this->eventDispatcher->dispatch(ResourceActions::SHOW, $configuration, $cart);
+        $eventResponse = $event->getResponse();
+        if (null !== $eventResponse) {
+            return $eventResponse;
+        }
+
         if (!$configuration->isHtmlRequest()) {
             return $this->viewHandler->handle($configuration, View::create($cart));
         }
@@ -46,7 +56,7 @@ class OrderController extends BaseOrderController
             [
                 'cart' => $cart,
                 'form' => $form->createView(),
-            ]
+            ],
         );
     }
 
@@ -62,7 +72,7 @@ class OrderController extends BaseOrderController
             return $this->redirectHandler->redirectToRoute(
                 $configuration,
                 $options['route'] ?? 'sylius_shop_homepage',
-                $options['parameters'] ?? []
+                $options['parameters'] ?? [],
             );
         }
 
@@ -74,7 +84,7 @@ class OrderController extends BaseOrderController
             $configuration->getParameters()->get('template'),
             [
                 'order' => $order,
-            ]
+            ],
         );
     }
 }

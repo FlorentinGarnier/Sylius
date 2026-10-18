@@ -22,20 +22,11 @@ use Webmozart\Assert\Assert;
 
 class ManagingShippingCategoriesContext implements Context
 {
-    private IndexPageInterface $indexPage;
-
-    private CreatePageInterface $createPage;
-
-    private UpdatePageInterface $updatePage;
-
     public function __construct(
-        IndexPageInterface $indexPage,
-        CreatePageInterface $createPage,
-        UpdatePageInterface $updatePage
+        private IndexPageInterface $indexPage,
+        private CreatePageInterface $createPage,
+        private UpdatePageInterface $updatePage,
     ) {
-        $this->indexPage = $indexPage;
-        $this->createPage = $createPage;
-        $this->updatePage = $updatePage;
     }
 
     /**
@@ -87,7 +78,7 @@ class ManagingShippingCategoriesContext implements Context
     {
         Assert::same(
             $this->updatePage->getValidationMessage($element),
-            sprintf('Please enter shipping category %s.', $element)
+            sprintf('Please enter shipping category %s.', $element),
         );
     }
 
@@ -217,7 +208,7 @@ class ManagingShippingCategoriesContext implements Context
     {
         Assert::same(
             $this->createPage->getValidationMessage('code'),
-            'The shipping category with given code already exists.'
+            'The shipping category with given code already exists.',
         );
     }
 

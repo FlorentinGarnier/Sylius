@@ -16,64 +16,55 @@ namespace Sylius\Component\Promotion\Model;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Sylius\Component\Resource\Model\TimestampableTrait;
+use Sylius\Component\Resource\Model\TranslatableTrait;
+use Sylius\Component\Resource\Model\TranslationInterface;
 
 class Promotion implements PromotionInterface
 {
-    use TimestampableTrait;
+    use TimestampableTrait, TranslatableTrait {
+        __construct as private initializeTranslationsCollection;
+        getTranslation as private doGetTranslation;
+    }
 
     /** @var mixed */
     protected $id;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $code;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $name;
 
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     protected $description;
 
     /**
      * When exclusive, promotion with top priority will be applied
+     *
      * @var int
      */
     protected $priority = 0;
 
     /**
      * Cannot be applied together with other promotions
+     *
      * @var bool
      */
     protected $exclusive = false;
 
-    /**
-     * @var int|null
-     */
+    /** @var int|null */
     protected $usageLimit;
 
-    /**
-     * @var int
-     */
+    /** @var int */
     protected $used = 0;
 
-    /**
-     * @var \DateTimeInterface|null
-     */
+    /** @var \DateTimeInterface|null */
     protected $startsAt;
 
-    /**
-     * @var \DateTimeInterface|null
-     */
+    /** @var \DateTimeInterface|null */
     protected $endsAt;
 
-    /**
-     * @var bool
-     */
+    /** @var bool */
     protected $couponBased = false;
 
     /**
@@ -101,6 +92,8 @@ class Promotion implements PromotionInterface
 
     public function __construct()
     {
+        $this->initializeTranslationsCollection();
+
         $this->createdAt = new \DateTime();
 
         /** @var ArrayCollection<array-key, PromotionCouponInterface> $this->coupons */
@@ -323,5 +316,19 @@ class Promotion implements PromotionInterface
     public function setAppliesToDiscounted(bool $applyOnDiscounted): void
     {
         $this->appliesToDiscounted = $applyOnDiscounted;
+    }
+
+    /** @return PromotionTranslationInterface */
+    public function getTranslation(?string $locale = null): TranslationInterface
+    {
+        /** @var PromotionTranslationInterface $translation */
+        $translation = $this->doGetTranslation($locale);
+
+        return $translation;
+    }
+
+    protected function createTranslation(): PromotionTranslationInterface
+    {
+        return new PromotionTranslation();
     }
 }

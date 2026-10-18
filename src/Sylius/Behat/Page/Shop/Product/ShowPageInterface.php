@@ -42,6 +42,8 @@ interface ShowPageInterface extends PageInterface
 
     public function getAttributeByName(string $name): ?string;
 
+    public function getAttributeListByName(string $name): array;
+
     public function getAttributes(): array;
 
     public function getAverageRating(): float;
@@ -93,4 +95,6 @@ interface ShowPageInterface extends PageInterface
     public function getOptionValues(string $optionName): array;
 
     public function getDescription(): string;
+
+    public function hasBreadcrumbLink(string $taxonName): bool;
 }

@@ -27,32 +27,14 @@ use Webmozart\Assert\Assert;
 
 final class ManagingPromotionCouponsContext implements Context
 {
-    private CreatePageInterface $createPage;
-
-    private GeneratePageInterface $generatePage;
-
-    private IndexPageInterface $indexPage;
-
-    private UpdatePageInterface $updatePage;
-
-    private CurrentPageResolverInterface $currentPageResolver;
-
-    private NotificationCheckerInterface $notificationChecker;
-
     public function __construct(
-        CreatePageInterface $createPage,
-        GeneratePageInterface $generatePage,
-        IndexPageInterface $indexPage,
-        UpdatePageInterface $updatePage,
-        CurrentPageResolverInterface $currentPageResolver,
-        NotificationCheckerInterface $notificationChecker
+        private CreatePageInterface $createPage,
+        private GeneratePageInterface $generatePage,
+        private IndexPageInterface $indexPage,
+        private UpdatePageInterface $updatePage,
+        private CurrentPageResolverInterface $currentPageResolver,
+        private NotificationCheckerInterface $notificationChecker,
     ) {
-        $this->createPage = $createPage;
-        $this->generatePage = $generatePage;
-        $this->indexPage = $indexPage;
-        $this->updatePage = $updatePage;
-        $this->currentPageResolver = $currentPageResolver;
-        $this->notificationChecker = $notificationChecker;
     }
 
     /**
@@ -378,6 +360,14 @@ final class ManagingPromotionCouponsContext implements Context
     }
 
     /**
+     * @Then I should be notified that generate code length is out of range
+     */
+    public function iShouldBeNotifiedThatCodeLengthIsOutOfRange(): void
+    {
+        Assert::true($this->generatePage->checkCodeLengthValidation('Coupon code length must be between 1 and 40.'));
+    }
+
+    /**
      * @Then /^there should still be only one coupon with code "([^"]+)" related to (this promotion)$/
      */
     public function thereShouldStillBeOnlyOneCouponWithCodeRelatedTo($code, PromotionInterface $promotion)
@@ -431,8 +421,8 @@ final class ManagingPromotionCouponsContext implements Context
     public function iShouldBeNotifiedOfFailure()
     {
         $this->notificationChecker->checkNotification(
-            'Error Cannot delete, the promotion coupon is in use.',
-            NotificationType::failure()
+            'Error Cannot delete, the Promotion coupon is in use.',
+            NotificationType::failure(),
         );
     }
 
@@ -452,7 +442,7 @@ final class ManagingPromotionCouponsContext implements Context
         Assert::true($this->generatePage->checkGenerationValidation(sprintf(
             'Invalid coupons code length or coupons amount. It is not possible to generate %d unique coupons with code length %d.',
             $amount,
-            $codeLength
+            $codeLength,
         )));
     }
 
